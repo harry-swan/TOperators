@@ -154,7 +154,8 @@ void threadMult(vector<SO6> &threadVector, const int8_t threadNum, const long th
         t = *titr;
         while (citr != current.end())
         {
-            if (titr == tend && citr == cend) break;
+            if (titr == tend && citr == cend)
+                break;
             curr = *citr;
             m = t * curr;
             if (prior.find(m) == prior.end())
@@ -163,7 +164,8 @@ void threadMult(vector<SO6> &threadVector, const int8_t threadNum, const long th
             }
             citr++;
         }
-        if (titr == tend) break;
+        if (titr == tend)
+            break;
         titr++;
         citr = current.begin();
     }
@@ -260,7 +262,7 @@ int main()
                 vector<SO6>::iterator end = threadVectors[i].end();
                 while (itr != end)
                 {
-                    if(next.insert(*itr).second)
+                    if (next.insert(*itr).second)
                     {
                         append.insert(*itr);
                     }
