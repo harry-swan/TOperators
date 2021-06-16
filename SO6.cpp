@@ -9,21 +9,6 @@
 #include "Z2.hpp"
 #include "SO6.hpp"
 
-/**
- * Method to compare two Z2 arrays of length 6 lexicographically
- * @param first array of Z2 of length 6
- * @param second array of Z2 of length 6
- * @return -1 if first < second, 0 if equal, 1 if first > second
- */
-bool lexLess(Z2 first[6], Z2 second[6])
-{
-    for (int8_t i = 0; i < 6; i++)
-    {
-        if (first[i] != second[i])
-            return first[i] < second[i];
-    }
-    return false;
-}
 
 /**
  * @brief Method to avoid multiple calls to lexLess when we need to lexicographically compare two strings
@@ -58,6 +43,22 @@ int lexComp(const Z2 first[6], const Z2 second[6])
     }
     return 0;
 }
+
+ /**
+ * Method to compare two Z2 arrays of length 6 lexicographically
+ * @param first array of Z2 of length 6
+ * @param second array of Z2 of length 6
+ * @return -1 if first < second, 0 if equal, 1 if first > second
+ */
+static bool lexLess(Z2 * first, Z2 * second) {
+    for (int8_t i = 0; i < 6; i++)
+    {
+        if (first[i] != second[i])
+            return first[i] < second[i];
+    }
+    return false;
+}
+
 
 /**
  * Basic constructor. Initializes Zero matrix.
@@ -159,6 +160,7 @@ void SO6::fixSign()
 // This may be slow
 void SO6::lexOrder()
 {
+    int8_t ret[6];
     Z2 *myZ2[] = {arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]};
     std::vector<Z2 *> myvector(myZ2, myZ2 + 6);
     std::sort(myvector.begin(), myvector.end(), lexLess);
@@ -179,15 +181,17 @@ void SO6::lexOrder()
     }
 }
 
+void SO6::reduced_rep() {
+    fixSign();
+    lexOrder();
+}
+
 bool SO6::operator<(const SO6 &other) const
 {
     SO6 first = *this;
-    first.fixSign();
-    first.lexOrder();
-
+    first.reduced_rep();
     SO6 second = other;
-    second.fixSign();
-    second.lexOrder();
+    second.reduced_rep();
 
     for (int8_t col = 0; col < 5; col++)
     {
@@ -209,12 +213,10 @@ bool SO6::operator<(const SO6 &other) const
 bool SO6::operator==(SO6 &other)
 {
     SO6 first = *this;
-    first.fixSign();
-    first.lexOrder();
+    first.reduced_rep();
 
     SO6 second = other;
-    second.fixSign();
-    second.lexOrder();
+    second.reduced_rep();
     // SO6 are the same if they have the same triangle
     // TODO: lower right triangle seems super fast, but can try out others
     for (int8_t col = 5; col > -1; col--)

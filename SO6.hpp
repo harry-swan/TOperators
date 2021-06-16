@@ -10,6 +10,7 @@ public:
     SO6 operator*(SO6 &);                 //mutliplication
     void fixSign();
     void lexOrder();
+    void reduced_rep();
     inline Z2 &operator()(int8_t col, int8_t row) { return arr[col][row]; } //returns the (i,j)th entry
     // bool operator%(SO6&);
     bool operator<(const SO6 &) const;
@@ -55,11 +56,62 @@ public:
         return t;
     }
 
+    static bool* signs(SO6 &mat, bool* ret)
+    {
+        for (int8_t col = 0; col < 6; col++) {
+            int row = 0;
+            while(mat[col][row]==0) row++;
+            ret[col] = (mat[col][row] < 0);
+        }
+        return ret;
+    }
+
+    // static int8_t* SO6::lexOrder(SO6 &mat)
+    // {
+    //     int8_t ret[6];
+    //     Z2 *myZ2[] = {mat[0], mat[1], mat[2], mat[3], mat[4], mat[5]};
+    //     std::vector<Z2 *> sorted(myZ2, myZ2 + 6);
+    //     std::sort(sorted.begin(), sorted.end(), SO6::lexLess);
+    //     for(int8_t i = 0; i<6; i++) {
+    //         if(lexLess(mat[i],sorted.at(2))) {
+    //             if(lexLess(mat[i],sorted.at(1))) {
+    //                 ret[i] = 0;
+    //                 break;
+    //             }
+    //             ret[i] = 1;
+    //             break;
+    //         }
+    //         else if (lexLess(sorted.at(3),mat[i])) {
+    //             if(lexLess(sorted.at(4),mat[i])) {
+    //                 ret[i] = 5;
+    //                 break;
+    //             ret[i] = 1;
+    //             break;
+    //         }
+    //     }
+    //     return ret;
+    // }
+
+        /**
+     * Method to compare two Z2 arrays of length 6 lexicographically
+     * @param first array of Z2 of length 6
+     * @param second array of Z2 of length 6
+     * @return -1 if first < second, 0 if equal, 1 if first > second
+     */
+    static bool lexLess(Z2 * first, Z2 * second) {
+        for (int8_t i = 0; i < 6; i++)
+        {
+            if (first[i] != second[i])
+                return first[i] < second[i];
+        }
+        return false;
+    }
+
 private:
     Z2 arr[6][6];
     std::vector<int8_t> hist;
-    bool isSorted;
     // std::string name;
     // Z2 norm;
     // int8_t LDE;
 };
+
