@@ -26,6 +26,7 @@
 #include <omp.h>
 #include "Z2.hpp"
 #include "SO6.hpp"
+#include "T_Hist.hpp"
 
 using namespace std;
 
@@ -46,13 +47,9 @@ const int8_t genFrom = tCount;
 //This also determines parallel block sizes
 const int saveInterval = 50000;
 
-SO6 identity()
+SO6 identity() 
 {
-    SO6 I = SO6();
-    for (int8_t k = 0; k < 6; k++)
-    {
-        I(k, k) = 1;
-    }
+    SO6 I = SO6::identity({-1});
     I.lexOrder();
     return I;
 }
@@ -64,22 +61,7 @@ SO6 identity()
  * @param matNum the index of the SO6 object in the base vector
  * @return T[i+1,j+1]
  */
-const SO6 tMatrix(int8_t i, int8_t j, int8_t matNum)
-{
-    // Generates the T Matrix T[i+1, j+1]
-    SO6 t({matNum});
-    for (int8_t k = 0; k < 6; k++)
-        t[k][k] = one;       // Initialize to the identity matrix
-    t[i][i] = inverse_root2; // Change the i,j cycle to appropriate 1/sqrt(2)
-    t[j][j] = inverse_root2;
-    t[i][j] = inverse_root2;
-    if (abs(i - j) != 1)
-        t[i][j].negate(); // Lexicographic ordering and sign fixing undoes the utility of this, not sure whether to keep it
-    t[j][i] = -t[i][j];
-    t.fixSign();
-    t.lexOrder();
-    return (t);
-}
+const SO6 tMatrix(int8_t i, int8_t j, int8_t matNum) {return SO6::tMatrix(i,j,matNum);}
 
 set<SO6> fileRead(int8_t tc, vector<SO6> tbase)
 {
@@ -191,29 +173,8 @@ int main()
     ifstream tfile;
     int8_t start = 0;
 
-    vector<SO6> tsv; //t count 1 matrices
-    for (int8_t i = 0; i < 15; i++)
-    {
-        if (i < 5)
-            tsv.push_back(tMatrix(0, i + 1, i));
-        else if (i < 9)
-            tsv.push_back(tMatrix(1, i - 3, i));
-        else if (i < 12)
-            tsv.push_back(tMatrix(2, i - 6, i));
-        else if (i < 14)
-            tsv.push_back(tMatrix(3, i - 8, i));
-        else
-            tsv.push_back(tMatrix(4, 5, i));
-    }
-
-    bool reject[15][15];
-    for (int i = 0; i < 15; i++)
-    {
-        for (int j = 0; j < 15; j++)
-        {
-            reject[i][j] = (tsv[i] * tsv[j] == identity());
-        }
-    }
+    vector<SO6> tsv(T_Hist::tsv+1,T_Hist::tsv+16); //t count 1 matrices
+    for(int i = 0; i< 15; i++) if(!(tsv[i] == T_Hist::tsv[i+1])) exit(0); //Failsafe
 
     if (tIO && genFrom > 2)
     {

@@ -100,8 +100,6 @@ SO6::SO6(Z2 a[6][6], std::vector<int8_t> t)
             arr[col][row] = a[row][col];
         }
     }
-    fixSign();
-    lexOrder();
     hist = t;
 }
 
@@ -130,8 +128,6 @@ SO6 SO6::operator*(SO6 &other)
             }
         }
     }
-    prod.fixSign();
-    prod.lexOrder();
     prod.hist = hist;
     prod.hist.insert(prod.hist.end(), other.hist.begin(), other.hist.end());
     return prod;
@@ -185,9 +181,17 @@ void SO6::lexOrder()
 
 bool SO6::operator<(const SO6 &other) const
 {
+    SO6 first = *this;
+    first.fixSign();
+    first.lexOrder();
+
+    SO6 second = other;
+    second.fixSign();
+    second.lexOrder();
+
     for (int8_t col = 0; col < 5; col++)
     {
-        switch (lexComp((*this)[col], other[col]))
+        switch (lexComp(first[col], second[col]))
         {
         case -1:
             return true;
@@ -204,13 +208,20 @@ bool SO6::operator<(const SO6 &other) const
  */
 bool SO6::operator==(SO6 &other)
 {
+    SO6 first = *this;
+    first.fixSign();
+    first.lexOrder();
+
+    SO6 second = other;
+    second.fixSign();
+    second.lexOrder();
     // SO6 are the same if they have the same triangle
     // TODO: lower right triangle seems super fast, but can try out others
     for (int8_t col = 5; col > -1; col--)
     {
-        for (int8_t row = 5; row > 5 - col - 1; row--)
+        for (int8_t row = 5; row > - 1; row--)
         {
-            if (arr[col][row] != other[col][row])
+            if (first[col][row] != second[col][row])
                 return false;
         }
     }
@@ -219,13 +230,21 @@ bool SO6::operator==(SO6 &other)
 
 bool SO6::operator==(const SO6 &other) const
 {
+    SO6 first = *this;
+    first.fixSign();
+    first.lexOrder();
+
+    SO6 second = other;
+    second.fixSign();
+    second.lexOrder();
+
     // SO6 are the same if they have the same triangle
     // TODO: lower right triangle seems super fast, but can try out others
     for (int col = 5; col > -1; col--)
     {
-        for (int row = 5; row > 5 - col - 1; row--)
+        for (int row = 5; row > - 1; row--)
         {
-            if (arr[col][row] < other[col][row] || other[col][row] < arr[col][row])
+            if (first[col][row] < second[col][row] || second[col][row] < first[col][row])
                 return false;
         }
     }
