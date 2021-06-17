@@ -30,7 +30,7 @@
 
 using namespace std;
 
-const int8_t numThreads = 8;
+const int8_t numThreads = 4;
 long operationsPerThread;
 int8_t rem;
 
@@ -49,7 +49,7 @@ const int saveInterval = 50000;
 
 SO6 identity() 
 {
-    SO6 I = SO6::identity({-1});
+    SO6 I = SO6::identity({0});
     I.lexOrder();
     return I;
 }
@@ -90,6 +90,7 @@ set<SO6> fileRead(int8_t tc, vector<SO6> tbase)
             }
             tset.insert(m);
             tmp.clear();
+            tfile.get(hist);
         }
     }
     return tset;
@@ -125,9 +126,9 @@ void threadMult(vector<SO6> &threadVector, const int8_t threadNum, const long th
     set<SO6>::iterator citr = current.begin();
     vector<SO6>::iterator tend = tsv.begin();
     set<SO6>::iterator cend = current.begin();
-    advance(titr, start / current.size());
+    advance(titr, 1 + start / current.size());
     advance(citr, start % current.size());
-    advance(tend, end / current.size());
+    advance(tend, 1 + end / current.size());
     advance(cend, end % current.size());
 
     SO6 t, m, curr;
@@ -173,8 +174,8 @@ int main()
     ifstream tfile;
     int8_t start = 0;
 
-    vector<SO6> tsv(T_Hist::tsv+1,T_Hist::tsv+16); //t count 1 matrices
-    for(int i = 0; i< 15; i++) if(!(tsv[i] == T_Hist::tsv[i+1])) exit(0); //Failsafe
+    vector<SO6> tsv(T_Hist::tsv,T_Hist::tsv+16); //t count 1 matrices
+    for(int i = 0; i< 16; i++) if(!(tsv[i] == T_Hist::tsv[i])) exit(0); //Failsafe
 
     if (tIO && genFrom > 2)
     {
