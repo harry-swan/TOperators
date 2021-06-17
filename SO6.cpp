@@ -263,7 +263,7 @@ std::ostream &operator<<(std::ostream &os, const SO6 &m)
 {
     for (int8_t i : m.hist)
     {
-        os << std::hex << +i << "\n";
+        os << std::hex << +i;// << "\n";
     }
     //os << "\n";
     /*     for(int row = 0; row<6; row++){
