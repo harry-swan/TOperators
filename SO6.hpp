@@ -70,7 +70,7 @@ public:
     static std::vector<int> lexicographic_permutation(SO6 &mat) {  
         std::vector<bool> signs = column_signs(mat);
         std::vector<int> index(6,0);
-        for (int i = 0 ; i < 6 ; i++) index[i] = i;
+        for (int i = 0 ; i < 6 ; i++) index[i] = i;   
         std::sort(index.begin(), index.end(),
             [&](const int& a, const int& b) {
                 return SO6::lexLess(mat[a],mat[b],signs[a],signs[b]);
@@ -78,7 +78,7 @@ public:
         );
         for (int i=0; i<6; i++) {
             if(signs[index[i]]) {
-                 index[i] = -index[i];
+                 index[i] = -(index[i]+1);              // Need negation and cannot negate 0. Can probably be handled without 1 indexing
             }
         }
         return index;
@@ -98,19 +98,12 @@ public:
         return false;
     }
 
-    /**
-     * Method to compare two Z2 arrays of length 6 lexicographically
-     * @param first array of Z2 of length 6
-     * @param second array of Z2 of length 6
-     * @return -1 if first < second, 0 if equal, 1 if first > second
-     */
     static bool lexLess(Z2 * first, Z2 * second, bool signA, bool signB) {
         for (int8_t i = 0; i < 6; i++) {
-            Z2 f = first[i];
-            Z2 s = second[i];
-
-            if(signA) f.negate();
-            if(signB) s.negate();
+            Z2 f = Z2((1-2*signA),0,0);
+            Z2 s = Z2((1-2*signB),0,0);
+            f = f*first[i];
+            s = s*second[i];
             if (f != s) return f < s;
         }
         return false;

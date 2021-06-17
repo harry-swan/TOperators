@@ -155,6 +155,36 @@ void threadMult(vector<SO6> &threadVector, const int8_t threadNum, const long th
 
 int main()
 {
+    for(int j = 0; j < 500000; j++) {
+        SO6 s = T_Hist::tsv[rand() % 16];
+        for(int i = 0; i< 12; i++) {
+            s = T_Hist::tsv[rand() % 16]*s;
+        }
+        
+        if(!(T_Hist(s).reconstruct() == s)) {
+            vector<int8_t> hh = T_Hist(s).getHistory();
+            for(int i = 0 ; i < hh.size(); i++ ) {
+                if(hh[i] != s.getHistory()[i]) cout << " <<<<<<<<<<<<<";
+            }
+            for(int i = 0; i < 6; i++) {
+                for(int j = 0; j < 6; j++) {
+                    cout << s[i][j].getA() << " ";
+                }
+                cout << "\n";
+            }
+            cout <<"\n";
+            s = T_Hist(s).reconstruct();
+            for(int i = 0; i < 6; i++) {
+                for(int j = 0; j < 6; j++) {
+                    cout << s[i][j].getA() << " ";
+                }
+                cout << "\n";
+            }
+            exit(0);
+        }
+    }
+
+    exit(0);
     operationsPerThread = saveInterval / numThreads;
     rem = saveInterval % numThreads;
     vector<vector<SO6>> threadVectors = {};
