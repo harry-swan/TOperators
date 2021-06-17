@@ -7,10 +7,7 @@ public:
     T_Hist(std::vector<int8_t> &);
     SO6 reconstruct();
     T_Hist operator*(T_Hist &);
-
     std::vector<int8_t> getHistory() { return hist; };
-
-    static void make_T_matrices();
     static SO6* tsv;
 
 private:

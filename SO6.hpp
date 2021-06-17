@@ -44,9 +44,6 @@ public:
         t[i][j] = Z2::inverse_root2();
         if (abs(i - j) != 1)  t[i][j].negate(); 
         t[j][i] = -t[i][j];
-        if( t == SO6::identity({})) {
-            std::cout << static_cast<int16_t>(i) << " " << static_cast<int16_t>(j) << " " << static_cast<int16_t>(matNum) << "\n";
-        }
         return t;
     }; 
 
@@ -56,53 +53,65 @@ public:
         return t;
     }
 
-    static bool* signs(SO6 &mat, bool* ret)
+    static std::vector<bool> column_signs(SO6 &mat)
     {
-        for (int8_t col = 0; col < 6; col++) {
+        std::vector<bool> ret(6,0);
+        for (int col = 0; col < 6; col++) {
             int row = 0;
-            while(mat[col][row]==0) row++;
+            while(mat[col][row]==0) {
+                row++;
+            }
+            bool tmp = (mat[col][row] < 0);
             ret[col] = (mat[col][row] < 0);
         }
         return ret;
     }
 
-    // static int8_t* SO6::lexOrder(SO6 &mat)
-    // {
-    //     int8_t ret[6];
-    //     Z2 *myZ2[] = {mat[0], mat[1], mat[2], mat[3], mat[4], mat[5]};
-    //     std::vector<Z2 *> sorted(myZ2, myZ2 + 6);
-    //     std::sort(sorted.begin(), sorted.end(), SO6::lexLess);
-    //     for(int8_t i = 0; i<6; i++) {
-    //         if(lexLess(mat[i],sorted.at(2))) {
-    //             if(lexLess(mat[i],sorted.at(1))) {
-    //                 ret[i] = 0;
-    //                 break;
-    //             }
-    //             ret[i] = 1;
-    //             break;
-    //         }
-    //         else if (lexLess(sorted.at(3),mat[i])) {
-    //             if(lexLess(sorted.at(4),mat[i])) {
-    //                 ret[i] = 5;
-    //                 break;
-    //             ret[i] = 1;
-    //             break;
-    //         }
-    //     }
-    //     return ret;
-    // }
+    static std::vector<int> lexicographic_permutation(SO6 &mat) {  
+        std::vector<bool> signs = column_signs(mat);
+        std::vector<int> index(6,0);
+        for (int i = 0 ; i < 6 ; i++) index[i] = i;
+        std::sort(index.begin(), index.end(),
+            [&](const int& a, const int& b) {
+                return SO6::lexLess(mat[a],mat[b],signs[a],signs[b]);
+            }
+        );
+        for (int i=0; i<6; i++) {
+            if(signs[index[i]]) {
+                 index[i] = -index[i];
+            }
+        }
+        return index;
+    }
 
-        /**
+    /**
      * Method to compare two Z2 arrays of length 6 lexicographically
      * @param first array of Z2 of length 6
      * @param second array of Z2 of length 6
      * @return -1 if first < second, 0 if equal, 1 if first > second
      */
-    static bool lexLess(Z2 * first, Z2 * second) {
+    static const bool lexLess(Z2 * first, Z2 * second) {
         for (int8_t i = 0; i < 6; i++)
         {
-            if (first[i] != second[i])
-                return first[i] < second[i];
+            if (first[i] != second[i]) return first[i] < second[i];
+        }
+        return false;
+    }
+
+    /**
+     * Method to compare two Z2 arrays of length 6 lexicographically
+     * @param first array of Z2 of length 6
+     * @param second array of Z2 of length 6
+     * @return -1 if first < second, 0 if equal, 1 if first > second
+     */
+    static bool lexLess(Z2 * first, Z2 * second, bool signA, bool signB) {
+        for (int8_t i = 0; i < 6; i++) {
+            Z2 f = first[i];
+            Z2 s = second[i];
+
+            if(signA) f.negate();
+            if(signB) s.negate();
+            if (f != s) return f < s;
         }
         return false;
     }
@@ -110,8 +119,5 @@ public:
 private:
     Z2 arr[6][6];
     std::vector<int8_t> hist;
-    // std::string name;
-    // Z2 norm;
-    // int8_t LDE;
 };
 

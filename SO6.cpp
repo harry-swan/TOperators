@@ -50,14 +50,6 @@ int lexComp(const Z2 first[6], const Z2 second[6])
  * @param second array of Z2 of length 6
  * @return -1 if first < second, 0 if equal, 1 if first > second
  */
-static bool lexLess(Z2 * first, Z2 * second) {
-    for (int8_t i = 0; i < 6; i++)
-    {
-        if (first[i] != second[i])
-            return first[i] < second[i];
-    }
-    return false;
-}
 
 
 /**
@@ -163,7 +155,11 @@ void SO6::lexOrder()
     int8_t ret[6];
     Z2 *myZ2[] = {arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]};
     std::vector<Z2 *> myvector(myZ2, myZ2 + 6);
-    std::sort(myvector.begin(), myvector.end(), lexLess);
+    std::sort(myvector.begin(), myvector.end(), 
+        [&](Z2* a, Z2* b) {
+            return SO6::lexLess(a,b);
+        }
+    );
     Z2 arr2[6][6];
     for (int8_t i = 0; i < 6; i++)
     {
@@ -212,18 +208,11 @@ bool SO6::operator<(const SO6 &other) const
  */
 bool SO6::operator==(SO6 &other)
 {
-    SO6 first = *this;
-    first.reduced_rep();
-
-    SO6 second = other;
-    second.reduced_rep();
-    // SO6 are the same if they have the same triangle
-    // TODO: lower right triangle seems super fast, but can try out others
     for (int8_t col = 5; col > -1; col--)
     {
         for (int8_t row = 5; row > - 1; row--)
         {
-            if (first[col][row] != second[col][row])
+            if ((*this)[col][row] != other[col][row])
                 return false;
         }
     }
@@ -232,21 +221,13 @@ bool SO6::operator==(SO6 &other)
 
 bool SO6::operator==(const SO6 &other) const
 {
-    SO6 first = *this;
-    first.fixSign();
-    first.lexOrder();
-
-    SO6 second = other;
-    second.fixSign();
-    second.lexOrder();
-
     // SO6 are the same if they have the same triangle
     // TODO: lower right triangle seems super fast, but can try out others
     for (int col = 5; col > -1; col--)
     {
         for (int row = 5; row > - 1; row--)
         {
-            if (first[col][row] < second[col][row] || second[col][row] < first[col][row])
+            if ((*this)[col][row] < other[col][row] || (*this)[col][row] < other[col][row])
                 return false;
         }
     }
