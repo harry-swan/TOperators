@@ -69,20 +69,6 @@ SO6::SO6()
     //     for(int8_t j=0; j<6; j++)
     //         arr[i][j]=Z2();
     // }
-    hist = {};
-}
-
-/**
- * Constructor that initializes arbitrary matrix with arbitrary name
- * @param t the object history
- */
-SO6::SO6(std::vector<int8_t> t)
-{
-    // for(int8_t i=0; i<6; i++){
-    //     for(int8_t j=0; j<6; j++)
-    //         arr[i][j]=Z2();
-    // }
-    hist = t;
 }
 
 /**
@@ -90,7 +76,7 @@ SO6::SO6(std::vector<int8_t> t)
  * @param a array of Z2 that the SO6 will take as values
  * @param t the object history
  */
-SO6::SO6(Z2 a[6][6], std::vector<int8_t> t)
+SO6::SO6(Z2 a[6][6])
 {
     // initializes SO6's entries according to a
     for (int8_t col = 0; col < 6; col++)
@@ -100,7 +86,6 @@ SO6::SO6(Z2 a[6][6], std::vector<int8_t> t)
             arr[col][row] = a[row][col];
         }
     }
-    hist = t;
 }
 
 /**
@@ -128,8 +113,6 @@ SO6 SO6::operator*(SO6 &other)
             }
         }
     }
-    prod.hist = hist;
-    prod.hist.insert(prod.hist.end(), other.hist.begin(), other.hist.end());
     return prod;
 }
 
@@ -153,14 +136,12 @@ SO6 SO6::operator*(const SO6 &other) const
             }
         }
     }
-    prod.hist = hist;
-    prod.hist.insert(prod.hist.end(), other.hist.begin(), other.hist.end());
     return prod;
 }
 
 SO6 SO6::transpose()
 {
-    return SO6(arr, hist);
+    return SO6(arr);
 }
 
 void SO6::fixSign()
@@ -218,9 +199,7 @@ void SO6::reduced_rep()
 bool SO6::operator<(const SO6 &other) const
 {
     SO6 first = *this;
-    first.reduced_rep();
     SO6 second = other;
-    second.reduced_rep();
 
     for (int8_t col = 0; col < 5; col++)
     {
@@ -288,18 +267,14 @@ bool SO6::operator==(const SO6 &other) const
  */
 std::ostream &operator<<(std::ostream &os, const SO6 &m)
 {
-    for (int8_t i : m.hist)
-    {
-        os << std::hex << +i; // << "\n";
-    }
-    //os << "\n";
-    /*     for(int row = 0; row<6; row++){
+    os << "\n";
+    for(int row = 0; row<6; row++){
         os << '[';
         for(int col = 0; col<6; col++)
             os << m[col][row] <<' ';
         os << "] \n";
     }
-    os << "\n"; */
+    os << "\n";
     return os;
 }
 

@@ -49,7 +49,7 @@ const int saveInterval = 50000;
 
 SO6 identity()
 {
-    SO6 I = SO6::identity({});
+    SO6 I = SO6::identity();
     I.lexOrder();
     return I;
 }

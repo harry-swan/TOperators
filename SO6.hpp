@@ -5,8 +5,7 @@ public:
     SO6();
     // SO6(std::string); //initializes zero matrix
     // SO6(Z2[6][6], std::string); //initializes matrix according to a 6x6 array of Z2
-    SO6(std::vector<int8_t> t);
-    SO6(Z2[6][6], std::vector<int8_t> t); //initializes matrix according to a 6x6 array of Z2
+    SO6(Z2[6][6]); //initializes matrix according to a 6x6 array of Z2
     SO6 operator*(SO6 &);                 //mutliplication
     SO6 operator*(const SO6 &) const;
     void fixSign();
@@ -40,23 +39,23 @@ public:
 
     static const SO6 tMatrix(int8_t i, int8_t j, int8_t matNum)
     {
-        SO6 t = SO6::identity({matNum}); // Initialize to the identity matrix
+        SO6 t = SO6::identity(); // Initialize to the identity matrix
         t[i][i] = Z2::inverse_root2();   // Change the i,j cycle to appropriate 1/sqrt(2)
         t[j][j] = Z2::inverse_root2();
         t[i][j] = Z2::inverse_root2();
         if (abs(i - j) != 1)
             t[i][j].negate();
         t[j][i] = -t[i][j];
-        if (t == SO6::identity({}))
+        if (t == SO6::identity())
         {
             std::cout << static_cast<int16_t>(i) << " " << static_cast<int16_t>(j) << " " << static_cast<int16_t>(matNum) << "\n";
         }
         return t;
     };
 
-    static const SO6 identity(int8_t matNum)
+    static const SO6 identity()
     {
-        SO6 t({matNum});
+        SO6 t;
         for (int8_t k = 0; k < 6; k++)
             t[k][k] = 1;
         return t;
@@ -169,7 +168,7 @@ public:
 
 private:
     Z2 arr[6][6];
-    std::vector<int8_t> hist;
+    // std::vector<int8_t> hist;
     // std::string name;
     // Z2 norm;
     // int8_t LDE;

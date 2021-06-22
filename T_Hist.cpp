@@ -33,7 +33,7 @@ T_Hist::T_Hist(std::vector<int8_t> &new_hist)
 void T_Hist::initHead()
 {
     T_Hist::head = new Node;
-    T_Hist::head->so6 = SO6::identity({});
+    T_Hist::head->so6 = SO6::identity();
 }
 
 void T_Hist::tableInsert(Node *t, Node *p, int8_t depth)
@@ -77,7 +77,9 @@ SO6 T_Hist::reconstruct()
 {
     std::vector<int8_t> left(hist.begin(), hist.begin() + hist.size() / 2);
     std::vector<int8_t> right(hist.begin() + hist.size() / 2, hist.end());
-    return tableLookup(left) * tableLookup(right);
+    SO6 ret = tableLookup(left) * tableLookup(right);
+    ret.reduced_rep();
+    return ret;
 }
 
 T_Hist T_Hist::operator*(T_Hist &other)
