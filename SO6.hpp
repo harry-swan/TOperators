@@ -37,31 +37,38 @@ public:
         return -1;
     }; */
     //std::vector<int8_t> getHistory() { return hist; };
-    
-    static const SO6 tMatrix(int8_t i, int8_t j , int8_t matNum) {
-        SO6 t = SO6::identity({matNum});                    // Initialize to the identity matrix
-        t[i][i] = Z2::inverse_root2();                      // Change the i,j cycle to appropriate 1/sqrt(2)
+
+    static const SO6 tMatrix(int8_t i, int8_t j, int8_t matNum)
+    {
+        SO6 t = SO6::identity({matNum}); // Initialize to the identity matrix
+        t[i][i] = Z2::inverse_root2();   // Change the i,j cycle to appropriate 1/sqrt(2)
         t[j][j] = Z2::inverse_root2();
         t[i][j] = Z2::inverse_root2();
-        if (abs(i - j) != 1)  t[i][j].negate(); 
+        if (abs(i - j) != 1)
+            t[i][j].negate();
         t[j][i] = -t[i][j];
-        if( t == SO6::identity({})) {
+        if (t == SO6::identity({}))
+        {
             std::cout << static_cast<int16_t>(i) << " " << static_cast<int16_t>(j) << " " << static_cast<int16_t>(matNum) << "\n";
         }
         return t;
-    }; 
+    };
 
-    static const SO6 identity(int8_t matNum) {
+    static const SO6 identity(int8_t matNum)
+    {
         SO6 t({matNum});
-        for(int8_t k = 0; k < 6; k++) t[k][k]=1;
+        for (int8_t k = 0; k < 6; k++)
+            t[k][k] = 1;
         return t;
     }
 
-    static bool* signs(SO6 &mat, bool* ret)
+    static bool *signs(SO6 &mat, bool *ret)
     {
-        for (int8_t col = 0; col < 6; col++) {
+        for (int8_t col = 0; col < 6; col++)
+        {
             int row = 0;
-            while(mat[col][row]==0) row++;
+            while (mat[col][row] == 0)
+                row++;
             ret[col] = (mat[col][row] < 0);
         }
         return ret;
@@ -93,29 +100,44 @@ public:
     //     return ret;
     // }
 
-        /**
+    /**
      * Method to compare two Z2 arrays of length 6 lexicographically
      * @param first array of Z2 of length 6
      * @param second array of Z2 of length 6
      * @return -1 if first < second, 0 if equal, 1 if first > second
      */
-    static bool lexLess(Z2 * first, Z2 * second, bool signA, bool signB) {
-        for (int8_t i = 0; i < 6; i++) {
-            Z2 f = Z2((1-2*signA),0,0);
-            Z2 s = Z2((1-2*signB),0,0);
-            f = f*first[i];
-            s = s*second[i];
-            if (f != s) return f < s;
+    static const bool lexLess(Z2 *first, Z2 *second)
+    {
+        for (int8_t i = 0; i < 6; i++)
+        {
+            if (first[i] != second[i])
+                return first[i] < second[i];
         }
         return false;
     }
 
-        static std::vector<bool> column_signs(SO6 &mat)
+    static bool lexLess(Z2 *first, Z2 *second, bool signA, bool signB)
     {
-        std::vector<bool> ret(6,0);
-        for (int col = 0; col < 6; col++) {
+        for (int8_t i = 0; i < 6; i++)
+        {
+            Z2 f = Z2((1 - 2 * signA), 0, 0);
+            Z2 s = Z2((1 - 2 * signB), 0, 0);
+            f = f * first[i];
+            s = s * second[i];
+            if (f != s)
+                return f < s;
+        }
+        return false;
+    }
+
+    static std::vector<bool> column_signs(SO6 &mat)
+    {
+        std::vector<bool> ret(6, 0);
+        for (int col = 0; col < 6; col++)
+        {
             int row = 0;
-            while(mat[col][row]==0) {
+            while (mat[col][row] == 0)
+            {
                 row++;
             }
             bool tmp = (mat[col][row] < 0);
@@ -124,18 +146,22 @@ public:
         return ret;
     }
 
-    static std::vector<int> lexicographic_permutation(SO6 &mat) {  
+    static std::vector<int> lexicographic_permutation(SO6 &mat)
+    {
         std::vector<bool> signs = column_signs(mat);
-        std::vector<int> index(6,0);
-        for (int i = 0 ; i < 6 ; i++) index[i] = i;   
+        std::vector<int> index(6, 0);
+        for (int i = 0; i < 6; i++)
+            index[i] = i;
         std::sort(index.begin(), index.end(),
-            [&](const int& a, const int& b) {
-                return SO6::lexLess(mat[a],mat[b],signs[a],signs[b]);
-            }
-        );
-        for (int i=0; i<6; i++) {
-            if(signs[index[i]]) {
-                 index[i] = -(index[i]+1);              // Need negation and cannot negate 0. Can probably be handled without 1 indexing
+                  [&](const int &a, const int &b)
+                  {
+                      return SO6::lexLess(mat[a], mat[b], signs[a], signs[b]);
+                  });
+        for (int i = 0; i < 6; i++)
+        {
+            if (signs[index[i]])
+            {
+                index[i] = -(index[i] + 1); // Need negation and cannot negate 0. Can probably be handled without 1 indexing
             }
         }
         return index;
@@ -148,4 +174,3 @@ private:
     // Z2 norm;
     // int8_t LDE;
 };
-

@@ -9,7 +9,6 @@
 #include "Z2.hpp"
 #include "SO6.hpp"
 
-
 /**
  * @brief Method to avoid multiple calls to lexLess when we need to lexicographically compare two strings
  * It doesn't seem like this will hit 0, since this only used when sorting, I think...
@@ -44,13 +43,14 @@ int lexComp(const Z2 first[6], const Z2 second[6])
     return 0;
 }
 
- /**
+/**
  * Method to compare two Z2 arrays of length 6 lexicographically
  * @param first array of Z2 of length 6
  * @param second array of Z2 of length 6
  * @return -1 if first < second, 0 if equal, 1 if first > second
  */
-static bool lexLess(Z2 * first, Z2 * second) {
+static bool lexLess(Z2 *first, Z2 *second)
+{
     for (int8_t i = 0; i < 6; i++)
     {
         if (first[i] != second[i])
@@ -58,7 +58,6 @@ static bool lexLess(Z2 * first, Z2 * second) {
     }
     return false;
 }
-
 
 /**
  * Basic constructor. Initializes Zero matrix.
@@ -188,7 +187,11 @@ void SO6::lexOrder()
     int8_t ret[6];
     Z2 *myZ2[] = {arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]};
     std::vector<Z2 *> myvector(myZ2, myZ2 + 6);
-    std::sort(myvector.begin(), myvector.end(), lexLess);
+    std::sort(myvector.begin(), myvector.end(),
+              [&](Z2 *a, Z2 *b)
+              {
+                  return SO6::lexLess(a, b);
+              });
     Z2 arr2[6][6];
     for (int8_t i = 0; i < 6; i++)
     {
@@ -206,7 +209,8 @@ void SO6::lexOrder()
     }
 }
 
-void SO6::reduced_rep() {
+void SO6::reduced_rep()
+{
     fixSign();
     lexOrder();
 }
@@ -246,7 +250,7 @@ bool SO6::operator==(SO6 &other)
     // TODO: lower right triangle seems super fast, but can try out others
     for (int8_t col = 5; col > -1; col--)
     {
-        for (int8_t row = 5; row > - 1; row--)
+        for (int8_t row = 5; row > -1; row--)
         {
             if (first[col][row] != second[col][row])
                 return false;
@@ -267,7 +271,7 @@ bool SO6::operator==(const SO6 &other) const
     // TODO: lower right triangle seems super fast, but can try out others
     for (int col = 5; col > -1; col--)
     {
-        for (int row = 5; row > - 1; row--)
+        for (int row = 5; row > -1; row--)
         {
             if (first[col][row] < second[col][row] || second[col][row] < first[col][row])
                 return false;
@@ -286,7 +290,7 @@ std::ostream &operator<<(std::ostream &os, const SO6 &m)
 {
     for (int8_t i : m.hist)
     {
-        os << std::hex << +i;// << "\n";
+        os << std::hex << +i; // << "\n";
     }
     //os << "\n";
     /*     for(int row = 0; row<6; row++){

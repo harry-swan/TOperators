@@ -18,7 +18,7 @@ struct T_Hist::Node
 };
 
 SO6 T_Hist::tsv[15] = {SO6::tMatrix(0, 1, 0), SO6::tMatrix(0, 2, 1), SO6::tMatrix(0, 3, 2), SO6::tMatrix(0, 4, 3), SO6::tMatrix(0, 5, 4), SO6::tMatrix(1, 2, 5), SO6::tMatrix(1, 3, 6), SO6::tMatrix(1, 4, 7), SO6::tMatrix(1, 5, 8), SO6::tMatrix(2, 3, 9), SO6::tMatrix(2, 4, 10), SO6::tMatrix(2, 5, 11), SO6::tMatrix(3, 4, 12), SO6::tMatrix(3, 5, 13), SO6::tMatrix(4, 5, 14)};
-T_Hist::Node* T_Hist::head = NULL;
+T_Hist::Node *T_Hist::head = NULL;
 
 T_Hist::T_Hist()
 {
@@ -65,7 +65,7 @@ void T_Hist::tableDelete(Node *t, Node *p)
 
 SO6 T_Hist::tableLookup(std::vector<int8_t> index)
 {
-    Node* node = T_Hist::head;
+    Node *node = T_Hist::head;
     for (int8_t i : index)
     {
         node = node->next[i];
@@ -75,8 +75,8 @@ SO6 T_Hist::tableLookup(std::vector<int8_t> index)
 
 SO6 T_Hist::reconstruct()
 {
-    std::vector<int8_t> left(hist.begin(), hist.begin() + hist.size()/2);
-    std::vector<int8_t> right(hist.begin() + hist.size()/2, hist.end());
+    std::vector<int8_t> left(hist.begin(), hist.begin() + hist.size() / 2);
+    std::vector<int8_t> right(hist.begin() + hist.size() / 2, hist.end());
     return tableLookup(left) * tableLookup(right);
 }
 

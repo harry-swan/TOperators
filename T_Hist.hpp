@@ -18,7 +18,7 @@ public:
     static SO6 tsv[15];
 
     struct Node;
-    static Node* head;
+    static Node *head;
     static void initHead();
     static void tableInsert(Node *, Node *, int8_t);
     static void tableDelete(Node *, Node *);
