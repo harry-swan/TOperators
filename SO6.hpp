@@ -99,13 +99,46 @@ public:
      * @param second array of Z2 of length 6
      * @return -1 if first < second, 0 if equal, 1 if first > second
      */
-    static bool lexLess(Z2 * first, Z2 * second) {
-        for (int8_t i = 0; i < 6; i++)
-        {
-            if (first[i] != second[i])
-                return first[i] < second[i];
+    static bool lexLess(Z2 * first, Z2 * second, bool signA, bool signB) {
+        for (int8_t i = 0; i < 6; i++) {
+            Z2 f = Z2((1-2*signA),0,0);
+            Z2 s = Z2((1-2*signB),0,0);
+            f = f*first[i];
+            s = s*second[i];
+            if (f != s) return f < s;
         }
         return false;
+    }
+
+        static std::vector<bool> column_signs(SO6 &mat)
+    {
+        std::vector<bool> ret(6,0);
+        for (int col = 0; col < 6; col++) {
+            int row = 0;
+            while(mat[col][row]==0) {
+                row++;
+            }
+            bool tmp = (mat[col][row] < 0);
+            ret[col] = (mat[col][row] < 0);
+        }
+        return ret;
+    }
+
+    static std::vector<int> lexicographic_permutation(SO6 &mat) {  
+        std::vector<bool> signs = column_signs(mat);
+        std::vector<int> index(6,0);
+        for (int i = 0 ; i < 6 ; i++) index[i] = i;   
+        std::sort(index.begin(), index.end(),
+            [&](const int& a, const int& b) {
+                return SO6::lexLess(mat[a],mat[b],signs[a],signs[b]);
+            }
+        );
+        for (int i=0; i<6; i++) {
+            if(signs[index[i]]) {
+                 index[i] = -(index[i]+1);              // Need negation and cannot negate 0. Can probably be handled without 1 indexing
+            }
+        }
+        return index;
     }
 
 private:
