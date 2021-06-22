@@ -77,5 +77,6 @@
         "string_view": "cpp",
         "shared_mutex": "cpp",
         "cinttypes": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Enabled"
 }

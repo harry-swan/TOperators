@@ -47,9 +47,9 @@ const int8_t genFrom = tCount;
 //This also determines parallel block sizes
 const int saveInterval = 50000;
 
-SO6 identity() 
+SO6 identity()
 {
-    SO6 I = SO6::identity({0});
+    SO6 I = SO6::identity({});
     I.lexOrder();
     return I;
 }
@@ -61,9 +61,10 @@ SO6 identity()
  * @param matNum the index of the SO6 object in the base vector
  * @return T[i+1,j+1]
  */
-const SO6 tMatrix(int8_t i, int8_t j, int8_t matNum) {return SO6::tMatrix(i,j,matNum);}
+const SO6 tMatrix(int8_t i, int8_t j, int8_t matNum) { return SO6::tMatrix(i, j, matNum); }
 
-set<SO6> fileRead(int8_t tc, vector<SO6> tbase)
+// File reading is no functional at the moment, it would need to be made to work with the T_Hist changes
+set<T_Hist> fileRead(int8_t tc)
 {
     ifstream tfile;
     tfile.open(("data/T" + to_string(tc) + ".txt").c_str());
@@ -72,7 +73,7 @@ set<SO6> fileRead(int8_t tc, vector<SO6> tbase)
         cout << "File does not exist.\n";
         exit(1);
     }
-    set<SO6> tset;
+    set<T_Hist> tset;
     char hist;
     long i = 0;
     vector<int8_t> tmp;
@@ -83,12 +84,13 @@ set<SO6> fileRead(int8_t tc, vector<SO6> tbase)
         tmp.push_back((hist >= 'a') ? (hist - 'a' + 10) : (hist - '0'));
         if (++i % tc == 0)
         {
-            m = tbase.at(tmp.at(tmp.size() - 1));
-            for (int8_t k = tmp.size() - 2; k > -1; k--)
+            //Commented out error inducing lines
+            //m = tsv.at(tmp.at(tmp.size() - 1));
+            for (int8_t k = tmp.size() - 1; k > -1; k--)
             {
-                m = tbase.at(tmp.at(k)) * m;
+                //m = tbase.at(tmp.at(k)) * m;
             }
-            tset.insert(m);
+            //tset.insert(m);
             tmp.clear();
             tfile.get(hist);
         }
@@ -97,7 +99,7 @@ set<SO6> fileRead(int8_t tc, vector<SO6> tbase)
 }
 
 // This appends next to the T file
-void writeResults(int8_t i, long save, set<SO6> &append)
+void writeResults(int8_t i, long save, set<T_Hist> &append)
 {
     auto start = chrono::high_resolution_clock::now();
     string fileName = "data/T" + to_string(i + 1) + ".sav";
@@ -106,7 +108,7 @@ void writeResults(int8_t i, long save, set<SO6> &append)
     write.close();
     fileName = "data/T" + to_string(i + 1) + ".txt";
     write = fstream(fileName, std::ios_base::app);
-    for (SO6 n : append)
+    for (T_Hist n : append)
         write << n;
     write.close();
     auto end = chrono::high_resolution_clock::now();
@@ -114,76 +116,78 @@ void writeResults(int8_t i, long save, set<SO6> &append)
     cout << ">>>Wrote T-Count " << (i + 1) << " to 'data/T" << (i + 1) << ".txt' in " << ret << "ms\n";
 }
 
-void threadMult(vector<SO6> &threadVector, const int8_t threadNum, const long threadContinue,
-                vector<SO6> &tsv, const set<SO6> &prior, const set<SO6> &current)
+void threadMult(vector<T_Hist> &threadVector, const int8_t threadNum, const long threadContinue,
+                const set<T_Hist> &prior, const set<T_Hist> &current)
 {
     // Setting up thread iteration, thread goes from (titr, citr) to (tend, cend)
     long start = threadContinue + threadNum * operationsPerThread + min(threadNum, rem);
     if (start >= current.size() * 15)
         return;
     long end = min(start + operationsPerThread + (threadNum < rem), (long)current.size() * 15);
-    vector<SO6>::iterator titr = tsv.begin();
-    set<SO6>::iterator citr = current.begin();
-    vector<SO6>::iterator tend = tsv.begin();
-    set<SO6>::iterator cend = current.begin();
-    advance(titr, 1 + start / current.size());
+    set<T_Hist>::iterator citr = current.begin();
+    set<T_Hist>::iterator cend = current.begin();
+    int8_t t = start / current.size();
     advance(citr, start % current.size());
-    advance(tend, 1 + end / current.size());
+    int8_t tend = end / current.size();
     advance(cend, end % current.size());
 
-    SO6 t, m, curr;
-    while (titr != tsv.end())
+    T_Hist m, curr;
+    while (t < 15)
     {
-        t = *titr;
         while (citr != current.end())
         {
-            if (titr == tend && citr == cend)
+            if (t == tend && citr == cend)
                 break;
             curr = *citr;
-            m = t * curr;
+            vector<int8_t> vec = {t};
+            m = T_Hist(vec) * curr;
             if (prior.find(m) == prior.end())
             {
                 threadVector.push_back(m);
             }
             citr++;
         }
-        if (titr == tend)
+        if (t == tend)
             break;
-        titr++;
+        t++;
         citr = current.begin();
     }
 }
 
 int main()
 {
-    operationsPerThread = saveInterval / numThreads;
-    rem = saveInterval % numThreads;
-    vector<vector<SO6>> threadVectors = {};
-    for (int i = 0; i < 15; i++)
-    {
-        threadVectors.push_back(vector<SO6>());
-    }
-
     //timing
     auto tbefore = chrono::high_resolution_clock::now();
 
-    set<SO6> prior;
-    set<SO6> current({identity()});
-    set<SO6> next;
-    set<SO6> append;
+    operationsPerThread = saveInterval / numThreads;
+    rem = saveInterval % numThreads;
+    vector<vector<T_Hist>> threadVectors = {};
+    for (int i = 0; i < numThreads; i++)
+    {
+        threadVectors.push_back(vector<T_Hist>());
+    }
+
+    set<T_Hist> prior({});
+    set<T_Hist> current({T_Hist()});
+    set<T_Hist> next({});
+    set<T_Hist> append({});
     ifstream tfile;
     int8_t start = 0;
 
-    vector<SO6> tsv(T_Hist::tsv,T_Hist::tsv+16); //t count 1 matrices
-    for(int i = 0; i< 16; i++) if(!(tsv[i] == T_Hist::tsv[i])) exit(0); //Failsafe
-
-    if (tIO && genFrom > 2)
+    /* if (tIO && genFrom > 2)
     {
         prior = fileRead(genFrom - 2, tsv);
         current = fileRead(genFrom - 1, tsv);
         start = genFrom - 1;
-    }
+    } */
 
+    T_Hist::initHead();
+    // Generate the lookup table
+    std::cout << "\nBeginning Table Generation with Depth " << (+tCount + 1) / 2 << "\n";
+
+    T_Hist::tableInsert(T_Hist::head, NULL, (int8_t)((+tCount + 1) / 2));
+
+    // Get every T operator
     for (int8_t i = start; i < tCount; i++)
     {
         std::cout << "\nBeginning T-Count " << (i + 1) << "\n";
@@ -199,7 +203,7 @@ int main()
         }
         else
         {
-            next = fileRead(i + 1, tsv);
+            next = fileRead(i + 1);
             string str;
             getline(tfile, str);
             stringstream s(str);
@@ -214,14 +218,14 @@ int main()
             vector<thread> threads = {};
             for (int8_t i = 0; i < numThreads; i++)
             {
-                threads.emplace_back(thread(threadMult, ref(threadVectors[i]), i, save, ref(tsv), ref(prior), ref(current)));
+                threads.emplace_back(thread(threadMult, ref(threadVectors[i]), i, save, ref(prior), ref(current)));
             }
             // Do matrix multiplication in threads
             for (int8_t i = 0; i < numThreads; i++)
             {
                 threads[i].join();
-                vector<SO6>::iterator itr = threadVectors[i].begin();
-                vector<SO6>::iterator end = threadVectors[i].end();
+                vector<T_Hist>::iterator itr = threadVectors[i].begin();
+                vector<T_Hist>::iterator end = threadVectors[i].end();
                 while (itr != end)
                 {
                     if (next.insert(*itr).second)
@@ -246,6 +250,7 @@ int main()
         prior.swap(current); // T++
         current.swap(next);  // T++
     }
+    T_Hist::tableDelete(T_Hist::head, NULL);
     chrono::duration<double> timeelapsed = chrono::high_resolution_clock::now() - tbefore;
     std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n";
     return 0;

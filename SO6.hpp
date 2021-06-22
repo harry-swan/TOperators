@@ -8,6 +8,7 @@ public:
     SO6(std::vector<int8_t> t);
     SO6(Z2[6][6], std::vector<int8_t> t); //initializes matrix according to a 6x6 array of Z2
     SO6 operator*(SO6 &);                 //mutliplication
+    SO6 operator*(const SO6 &) const;
     void fixSign();
     void lexOrder();
     void reduced_rep();
@@ -29,13 +30,13 @@ public:
     friend std::ostream &operator<<(std::ostream &, const SO6 &); //display
     bool operator==(const SO6 &other) const;
     SO6 residue(); // returns the residue matrix using Z2::pattern()
-    inline int8_t getLast()
+    /* inline int8_t getLast()
     {
         if (hist.size() != 0)
             return hist[0];
         return -1;
-    };
-    std::vector<int8_t> getHistory() { return hist; };
+    }; */
+    //std::vector<int8_t> getHistory() { return hist; };
     
     static const SO6 tMatrix(int8_t i, int8_t j , int8_t matNum) {
         SO6 t = SO6::identity({matNum});                    // Initialize to the identity matrix

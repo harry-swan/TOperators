@@ -134,6 +134,31 @@ SO6 SO6::operator*(SO6 &other)
     return prod;
 }
 
+SO6 SO6::operator*(const SO6 &other) const
+{
+    //multiplies operators assuming COLUMN,ROW indexing
+    SO6 prod;
+    Z2 next;
+
+    // Compute product
+    for (int8_t row = 0; row < 6; row++)
+    {
+        for (int8_t col = 0; col < 6; col++)
+        {
+            for (int8_t k = 0; k < 6; k++)
+            {
+                // next = arr[row][k]*other[col][k];            // This transpose * other
+                next = arr[k][row] * other[col][k]; // This not transpose * other
+                // prod(col,row) += next;
+                prod[col][row] += next;
+            }
+        }
+    }
+    prod.hist = hist;
+    prod.hist.insert(prod.hist.end(), other.hist.begin(), other.hist.end());
+    return prod;
+}
+
 SO6 SO6::transpose()
 {
     return SO6(arr, hist);
@@ -233,12 +258,10 @@ bool SO6::operator==(SO6 &other)
 bool SO6::operator==(const SO6 &other) const
 {
     SO6 first = *this;
-    first.fixSign();
-    first.lexOrder();
+    first.reduced_rep();
 
     SO6 second = other;
-    second.fixSign();
-    second.lexOrder();
+    second.reduced_rep();
 
     // SO6 are the same if they have the same triangle
     // TODO: lower right triangle seems super fast, but can try out others
@@ -293,7 +316,7 @@ SO6 SO6::residue()
 {
     int8_t LDE = genLDE();
     SO6 res;
-    res.hist = hist;
+    // res.hist = hist;
     for (int i = 0; i < 5; i++)
     {
         for (int j = 0; j < 5; j++)
