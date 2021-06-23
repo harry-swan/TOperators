@@ -98,7 +98,7 @@ set<T_Hist> fileRead(unsigned char tc)
     return tset;
 }
 
-// This appends next to the T file
+// This appends set append to the T file
 void writeResults(unsigned char i, unsigned long long save, set<T_Hist> &append)
 {
     auto start = chrono::high_resolution_clock::now();
@@ -119,13 +119,15 @@ void writeResults(unsigned char i, unsigned long long save, set<T_Hist> &append)
 void threadMult(vector<T_Hist> &threadVector, const unsigned char threadNum, const unsigned long long threadContinue,
                 const set<T_Hist> &prior, const set<T_Hist> &current)
 {
-    // Setting up thread iteration, thread goes from (titr, citr) to (tend, cend)
+    // Setting up thread iteration, thread multiplies everything in range (titr, citr) to (tend, cend)
+    // by all 15 base T Operators
     unsigned long long start = threadContinue + threadNum * operationsPerThread + min(threadNum, rem);
     if (start >= current.size() * 15)
         return;
     unsigned long long end = min(start + operationsPerThread + (threadNum < rem), (unsigned long long)current.size() * 15);
     set<T_Hist>::iterator citr = current.begin();
     set<T_Hist>::iterator cend = current.begin();
+    // Add 1 because we don't care about multiplication by identity tsv[0]
     unsigned char t = 1 + start / current.size();
     advance(citr, start % current.size());
     unsigned char tend = 1 + end / current.size();
@@ -174,6 +176,7 @@ int main()
     ifstream tfile;
     unsigned char start = 0;
 
+    // fileRead() does not work at present
     /* if (tIO && genFrom > 2)
     {
         prior = fileRead(genFrom - 2, tsv);
@@ -181,6 +184,7 @@ int main()
         start = genFrom - 1;
     } */
 
+    // Initialize the head of the SO6 tree
     T_Hist::initHead();
     // Generate the lookup table
     std::cout << "\nBeginning Table Generation with Depth " << (+tCount + 1) / 2 << "\n";
@@ -230,6 +234,7 @@ int main()
                 {
                     if (next.insert(*itr).second)
                     {
+                        // This is only called if the insert into next succeeded
                         append.insert(*itr);
                     }
                     itr++;
@@ -250,6 +255,7 @@ int main()
         prior.swap(current); // T++
         current.swap(next);  // T++
     }
+    // Free all table memory
     T_Hist::tableDelete(T_Hist::head, NULL);
     chrono::duration<double> timeelapsed = chrono::high_resolution_clock::now() - tbefore;
     std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n";

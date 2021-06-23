@@ -10,6 +10,8 @@
 #include "SO6.hpp"
 #include "T_Hist.hpp"
 
+// Nodes of a tree that stores SO6 matrices
+// next[i]->so6 = tsv[i+1] * so6
 struct T_Hist::Node
 {
     SO6 so6;
@@ -36,6 +38,7 @@ void T_Hist::initHead()
     T_Hist::head->so6 = SO6::identity();
 }
 
+// Recursively populates the so6 tree up to depth multiplications
 void T_Hist::tableInsert(Node *t, Node *p, unsigned char depth)
 {
     if (depth)
@@ -52,6 +55,7 @@ void T_Hist::tableInsert(Node *t, Node *p, unsigned char depth)
     }
 }
 
+// Recursively frees all memory used allocated by the so6 tree
 void T_Hist::tableDelete(Node *t, Node *p)
 {
     if (t)
@@ -74,6 +78,11 @@ SO6 T_Hist::tableLookup(std::vector<unsigned char> index)
     return node->so6;
 }
 
+/**
+ * Reconstructs the corresponding SO6 object by multiplying the left and right SO6 objects
+ * found from looking up the left and right history vectors with tableLookup()
+ * @param t The SO6 object resulting from multiplication of every tsv element in hist
+ */
 SO6 T_Hist::reconstruct()
 {
     std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
@@ -83,11 +92,14 @@ SO6 T_Hist::reconstruct()
     return ret;
 }
 
+// Does nothing, will be useful if the logic is needed in multiple functions
+// such as * and the constructor
 void T_Hist::histInsert(unsigned char h)
 {
     // Might want this to be a function
 }
 
+// Concatenates the history vectors into one T_Hist object
 T_Hist T_Hist::operator*(T_Hist &other)
 {
     std::vector<unsigned char> history;
@@ -108,6 +120,7 @@ bool T_Hist::operator<(T_Hist &other)
     return this->reconstruct() < other.reconstruct();
 }
 
+// Compares the SO6 objects corresponding to *this and other using the lexicographic ordering
 bool T_Hist::operator<(const T_Hist &other) const
 {
     T_Hist t = *this;
@@ -115,6 +128,7 @@ bool T_Hist::operator<(const T_Hist &other) const
     return t.reconstruct() < o.reconstruct();
 }
 
+// Prints every element of the history vector for T_Hist h
 std::ostream &operator<<(std::ostream &os, const T_Hist &h)
 {
     for (char i : h.hist)
