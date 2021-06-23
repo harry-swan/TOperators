@@ -10,7 +10,7 @@
  * @param b sqrt(2) part of numerator
  * @param c log_2 of the denominator
  */
-Z2::Z2(const int8_t a, const int8_t b, const int8_t c)
+Z2::Z2(const char a, const char b, const char c)
 {
     // val[2] = c<<2;
     // if(c%2) {
@@ -54,7 +54,7 @@ Z2 Z2::operator+(Z2 &other)
  */
 Z2 &Z2::operator+=(Z2 &other)
 {
-    int8_t exp_diff = val[2] - other.val[2];
+    char exp_diff = val[2] - other.val[2];
     if (exp_diff > 0)
     {
         val[0] += other.val[0] << exp_diff;
@@ -110,7 +110,7 @@ bool Z2::operator==(const Z2 &other)
  * @param other reference to Z2 object to be compared to
  * @return whether or not the entries of the two Z2s are equal
  */
-bool Z2::operator==(const int8_t &i) { return val[0] == i && val[1] == 0 && val[2] == 0; }
+bool Z2::operator==(const char &i) { return val[0] == i && val[1] == 0 && val[2] == 0; }
 
 bool Z2::operator!=(const Z2 &other) { return !(*this == other); }
 
@@ -126,16 +126,16 @@ bool Z2::operator<(Z2 &other)
     {
         if (diff.val[1] <= 0)
             return true;                              // a<0 and b<=0 means that diff < 0
-        int8_t a2 = diff.val[0] * diff.val[0];        // compute a^2
-        int8_t b2 = (diff.val[1] * diff.val[1]) << 1; // compute 2b^2
+        char a2 = diff.val[0] * diff.val[0];        // compute a^2
+        char b2 = (diff.val[1] * diff.val[1]) << 1; // compute 2b^2
         if (a2 > b2)
             return true; // a<0, b>0, and a^2 > 2 b^2 implies that a+sqrt(2)b <0
         return false;    // a<0, b>0, and a^2 <= 2 b^2 implies that a+sqrt(2)b >= 0
     }
     if (diff.val[1] >= 0)
         return false;                             // a>=0 and b>=0 means that diff >=0
-    int8_t a2 = diff.val[0] * diff.val[0];        // compute a^2
-    int8_t b2 = (diff.val[1] * diff.val[1]) << 1; // compute 2b^2
+    char a2 = diff.val[0] * diff.val[0];        // compute a^2
+    char b2 = (diff.val[1] * diff.val[1]) << 1; // compute 2b^2
     if (a2 < b2)
         return true; // a>0, b<0, and a^2 < 2b^2 implies that a + sqrt(2) b < 0
     return false;    // a>0, b<0, and a^2 >= 2b^2 implies that a+sqrt(2)b >= 0
@@ -148,9 +148,9 @@ bool Z2::operator<(Z2 &other)
  */
 const bool Z2::operator<(const Z2 &other) const
 {
-    int8_t k = std::max(val[2], other[2]);
-    int8_t a = val[0] << (k - val[2]);
-    int8_t b = val[1] << (k - val[2]);
+    char k = std::max(val[2], other[2]);
+    char a = val[0] << (k - val[2]);
+    char b = val[1] << (k - val[2]);
     a -= other[0] << (k - other[2]);
     b -= other[1] << (k - other[2]);
     if (a < 0)
@@ -181,13 +181,13 @@ bool Z2::operator<=(Z2 &other) { return !(*this > other); }
  * @param other reference to an integer
  * @return true if this < other and false otherwise
  */
-bool Z2::operator<(const int8_t &i)
+bool Z2::operator<(const char &i)
 {
     Z2 tmp = Z2(i, 0, 0);
     return *this < tmp;
 }
 
-bool Z2::operator>(const int8_t &i)
+bool Z2::operator>(const char &i)
 {
     Z2 tmp = Z2(i, 0, 0);
     return *this > tmp;
@@ -198,7 +198,7 @@ bool Z2::operator>(const int8_t &i)
  * @param other reference to object make *this equal to
  * @return *this reference to this object which has been made equal to other
  */
-Z2 &Z2::operator=(const int8_t &other)
+Z2 &Z2::operator=(const char &other)
 {
     //assigns an operator
     val[0] = other;
@@ -276,7 +276,7 @@ Z2 Z2::pattern(int LDE)
 // For debugging
 std::ostream &operator<<(std::ostream &os, const Z2 &z)
 {
-    for (int8_t i : z.val)
+    for (char i : z.val)
     {
         os << std::hex << +i;
     }

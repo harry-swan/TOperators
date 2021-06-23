@@ -30,22 +30,22 @@
 
 using namespace std;
 
-const int8_t numThreads = 4;
-long operationsPerThread;
-int8_t rem;
+const unsigned char numThreads = 4;
+unsigned long long operationsPerThread;
+unsigned char rem;
 
-const int8_t tCount = 5;
+const unsigned char tCount = 5;
 const Z2 inverse_root2 = Z2::inverse_root2();
 const Z2 one = Z2::one();
 
 //Turn this on if you want to read in saved data
 const bool tIO = false;
 //If tIO true, choose which tCount to begin generating from:
-const int8_t genFrom = tCount;
+const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-const int saveInterval = 50000;
+const unsigned int saveInterval = 50000;
 
 SO6 identity()
 {
@@ -61,10 +61,10 @@ SO6 identity()
  * @param matNum the index of the SO6 object in the base vector
  * @return T[i+1,j+1]
  */
-const SO6 tMatrix(int8_t i, int8_t j, int8_t matNum) { return SO6::tMatrix(i, j, matNum); }
+const SO6 tMatrix(unsigned char i, unsigned char j, char matNum) { return SO6::tMatrix(i, j, matNum); }
 
 // File reading is no functional at the moment, it would need to be made to work with the T_Hist changes
-set<T_Hist> fileRead(int8_t tc)
+set<T_Hist> fileRead(unsigned char tc)
 {
     ifstream tfile;
     tfile.open(("data/T" + to_string(tc) + ".txt").c_str());
@@ -75,8 +75,8 @@ set<T_Hist> fileRead(int8_t tc)
     }
     set<T_Hist> tset;
     char hist;
-    long i = 0;
-    vector<int8_t> tmp;
+    unsigned long long i = 0;
+    vector<unsigned char> tmp;
     SO6 m;
     while (tfile.get(hist))
     {
@@ -86,7 +86,7 @@ set<T_Hist> fileRead(int8_t tc)
         {
             //Commented out error inducing lines
             //m = tsv.at(tmp.at(tmp.size() - 1));
-            for (int8_t k = tmp.size() - 1; k > -1; k--)
+            for (unsigned char k = tmp.size() - 1; k > -1; k--)
             {
                 //m = tbase.at(tmp.at(k)) * m;
             }
@@ -99,7 +99,7 @@ set<T_Hist> fileRead(int8_t tc)
 }
 
 // This appends next to the T file
-void writeResults(int8_t i, long save, set<T_Hist> &append)
+void writeResults(unsigned char i, unsigned long long save, set<T_Hist> &append)
 {
     auto start = chrono::high_resolution_clock::now();
     string fileName = "data/T" + to_string(i + 1) + ".sav";
@@ -116,30 +116,30 @@ void writeResults(int8_t i, long save, set<T_Hist> &append)
     cout << ">>>Wrote T-Count " << (i + 1) << " to 'data/T" << (i + 1) << ".txt' in " << ret << "ms\n";
 }
 
-void threadMult(vector<T_Hist> &threadVector, const int8_t threadNum, const long threadContinue,
+void threadMult(vector<T_Hist> &threadVector, const unsigned char threadNum, const unsigned long long threadContinue,
                 const set<T_Hist> &prior, const set<T_Hist> &current)
 {
     // Setting up thread iteration, thread goes from (titr, citr) to (tend, cend)
-    long start = threadContinue + threadNum * operationsPerThread + min(threadNum, rem);
+    unsigned long long start = threadContinue + threadNum * operationsPerThread + min(threadNum, rem);
     if (start >= current.size() * 15)
         return;
-    long end = min(start + operationsPerThread + (threadNum < rem), (long)current.size() * 15);
+    unsigned long long end = min(start + operationsPerThread + (threadNum < rem), (unsigned long long)current.size() * 15);
     set<T_Hist>::iterator citr = current.begin();
     set<T_Hist>::iterator cend = current.begin();
-    int8_t t = start / current.size();
+    unsigned char t = 1 + start / current.size();
     advance(citr, start % current.size());
-    int8_t tend = end / current.size();
+    unsigned char tend = 1 + end / current.size();
     advance(cend, end % current.size());
 
     T_Hist m, curr;
-    while (t < 15)
+    while (t < 16)
     {
         while (citr != current.end())
         {
             if (t == tend && citr == cend)
                 break;
             curr = *citr;
-            vector<int8_t> vec = {t};
+            vector<unsigned char> vec = {t};
             m = T_Hist(vec) * curr;
             if (prior.find(m) == prior.end())
             {
@@ -162,7 +162,7 @@ int main()
     operationsPerThread = saveInterval / numThreads;
     rem = saveInterval % numThreads;
     vector<vector<T_Hist>> threadVectors = {};
-    for (int i = 0; i < numThreads; i++)
+    for (unsigned int i = 0; i < numThreads; i++)
     {
         threadVectors.push_back(vector<T_Hist>());
     }
@@ -172,7 +172,7 @@ int main()
     set<T_Hist> next({});
     set<T_Hist> append({});
     ifstream tfile;
-    int8_t start = 0;
+    unsigned char start = 0;
 
     /* if (tIO && genFrom > 2)
     {
@@ -185,17 +185,17 @@ int main()
     // Generate the lookup table
     std::cout << "\nBeginning Table Generation with Depth " << (+tCount + 1) / 2 << "\n";
 
-    T_Hist::tableInsert(T_Hist::head, NULL, (int8_t)((+tCount + 1) / 2));
+    T_Hist::tableInsert(T_Hist::head, NULL, (unsigned char)((+tCount + 1) / 2));
 
     // Get every T operator
-    for (int8_t i = start; i < tCount; i++)
+    for (unsigned char i = start; i < tCount; i++)
     {
         std::cout << "\nBeginning T-Count " << (i + 1) << "\n";
 
         auto start = chrono::high_resolution_clock::now();
 
         // Main loop here
-        long save = 0;
+        unsigned long long save = 0;
         tfile.open(("data/T" + to_string(i + 1) + "sav").c_str());
         if (!tIO || !tfile)
         {
@@ -208,20 +208,20 @@ int main()
             getline(tfile, str);
             stringstream s(str);
             getline(s, str, ' ');
-            int8_t save = stoi(str);
+            unsigned char save = stoi(str);
         }
         tfile.close();
 
-        long saveEnd = current.size() * 15;
+        unsigned long long saveEnd = current.size() * 15;
         while (save < saveEnd)
         {
             vector<thread> threads = {};
-            for (int8_t i = 0; i < numThreads; i++)
+            for (unsigned char i = 0; i < numThreads; i++)
             {
                 threads.emplace_back(thread(threadMult, ref(threadVectors[i]), i, save, ref(prior), ref(current)));
             }
             // Do matrix multiplication in threads
-            for (int8_t i = 0; i < numThreads; i++)
+            for (unsigned char i = 0; i < numThreads; i++)
             {
                 threads[i].join();
                 vector<T_Hist>::iterator itr = threadVectors[i].begin();
