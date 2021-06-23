@@ -49,7 +49,7 @@ void T_Hist::tableInsert(Node *t, Node *p, unsigned char depth)
             Node *node = new Node;
             t->next[i] = node;
             node->prev = p;
-            node->so6 = T_Hist::tsv[++i] * t->so6;
+            node->so6 = t->so6 * T_Hist::tsv[++i];
             tableInsert(node, t, depth - 1);
         }
     }
