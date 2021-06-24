@@ -12,7 +12,8 @@ public:
     bool operator<(const T_Hist &) const;
     friend std::ostream &operator<<(std::ostream &, const T_Hist &);
 
-    std::vector<unsigned char> getHistory() { return hist; };
+    std::vector<unsigned char> getHistory() { std::vector<unsigned char> ret = left_hist;
+                    ret.insert(ret.end(), right_hist.begin(), right_hist.end()); return ret; };
     void histInsert(unsigned char); // Currently unused
 
     static void make_T_matrices();
@@ -23,8 +24,9 @@ public:
     static void initHead(); // Initalizes the head, called at the start of main()
     static void tableInsert(Node *, Node *, unsigned char); // Populates the so6 tree
     static void tableDelete(Node *, Node *); // Frees all memory allocated in the so6 tree
-    static SO6 tableLookup(std::vector<unsigned char>); // Get the matrix corresponding to a history vector
+    static SO6* tableLookup(std::vector<unsigned char> &); // Get the matrix corresponding to a history vector
 
 private:
-    std::vector<unsigned char> hist;
+    std::vector<unsigned char> left_hist;
+    std::vector<unsigned char> right_hist;
 };
