@@ -14,7 +14,7 @@
 // next[i]->so6 = tsv[i+1] * so6
 struct T_Hist::Node
 {
-    SO6 so6;
+    SO6 *so6;
     Node *next[15];
     Node *prev;
 };
@@ -24,18 +24,21 @@ T_Hist::Node *T_Hist::head = NULL;
 
 T_Hist::T_Hist()
 {
-    hist.clear();
+    left_hist.clear();
+    right_hist.clear();
 }
 
 T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
 {
-    hist = new_hist;
+    left_hist = std::vector<unsigned char>(new_hist.begin(), new_hist.begin() + new_hist.size() / 2);
+    right_hist = std::vector<unsigned char>(new_hist.begin() + new_hist.size() / 2, new_hist.end());
 }
 
 void T_Hist::initHead()
 {
     T_Hist::head = new Node;
-    T_Hist::head->so6 = SO6::identity();
+    T_Hist::head->so6 = new SO6;
+    *(T_Hist::head->so6) = SO6::identity();
 }
 
 // Recursively populates the so6 tree up to depth multiplications
@@ -49,7 +52,8 @@ void T_Hist::tableInsert(Node *t, Node *p, unsigned char depth)
             Node *node = new Node;
             t->next[i] = node;
             node->prev = p;
-            node->so6 = t->so6 * T_Hist::tsv[++i];
+            node->so6 = new SO6;
+            *(node->so6) = *(t->so6) * T_Hist::tsv[++i];
             tableInsert(node, t, depth - 1);
         }
     }
@@ -64,11 +68,12 @@ void T_Hist::tableDelete(Node *t, Node *p)
         {
             tableDelete(t->next[i], t);
         }
+        delete t->so6;
         delete t;
     }
 }
 
-SO6 T_Hist::tableLookup(std::vector<unsigned char> index)
+SO6* T_Hist::tableLookup(std::vector<unsigned char> &index)
 {
     Node *node = T_Hist::head;
     for (char i : index)
@@ -85,9 +90,7 @@ SO6 T_Hist::tableLookup(std::vector<unsigned char> index)
  */
 SO6 T_Hist::reconstruct()
 {
-    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
-    std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
-    SO6 ret = tableLookup(left) * tableLookup(right);
+    SO6 ret = *tableLookup(left_hist) * *tableLookup(right_hist);
     ret.reduced_rep();
     return ret;
 }
@@ -103,9 +106,13 @@ void T_Hist::histInsert(unsigned char h)
 T_Hist T_Hist::operator*(T_Hist &other)
 {
     std::vector<unsigned char> history;
-    for (unsigned char i : hist)
+    for (unsigned char i : left_hist)
         history.push_back(i);
-    for (unsigned char i : other.hist)
+    for (unsigned char i : right_hist)
+        history.push_back(i);
+    for (unsigned char i : other.left_hist)
+        history.push_back(i);
+    for (unsigned char i : other.right_hist)
         history.push_back(i);
     return T_Hist(history);
 }
@@ -131,7 +138,11 @@ bool T_Hist::operator<(const T_Hist &other) const
 // Prints every element of the history vector for T_Hist h
 std::ostream &operator<<(std::ostream &os, const T_Hist &h)
 {
-    for (char i : h.hist)
+    for (char i : h.left_hist)
+    {
+        os << std::hex << +(i);
+    }
+    for (char i : h.right_hist)
     {
         os << std::hex << +(i);
     }
