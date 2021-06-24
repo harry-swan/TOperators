@@ -127,7 +127,6 @@ void threadMult(vector<T_Hist> &threadVector, const unsigned char threadNum, con
     unsigned long long end = min(start + operationsPerThread + (threadNum < rem), (unsigned long long)current.size() * 15);
     set<T_Hist>::iterator citr = current.begin();
     set<T_Hist>::iterator cend = current.begin();
-    // Add 1 because we don't care about multiplication by identity tsv[0]
     unsigned char t = 1 + start / current.size();
     advance(citr, start % current.size());
     unsigned char tend = 1 + end / current.size();
@@ -184,12 +183,10 @@ int main()
         start = genFrom - 1;
     } */
 
-    // Initialize the head of the SO6 tree
-    T_Hist::initHead();
     // Generate the lookup table
     std::cout << "\nBeginning Table Generation with Depth " << (+tCount + 1) / 2 << "\n";
 
-    T_Hist::tableInsert(T_Hist::head, NULL, (unsigned char)((+tCount + 1) / 2));
+    T_Hist::initTable((unsigned char)((+tCount + 1) / 2));
 
     // Get every T operator
     for (unsigned char i = start; i < tCount; i++)
@@ -256,7 +253,6 @@ int main()
         current.swap(next);  // T++
     }
     // Free all table memory
-    T_Hist::tableDelete(T_Hist::head, NULL);
     chrono::duration<double> timeelapsed = chrono::high_resolution_clock::now() - tbefore;
     std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n";
     return 0;
