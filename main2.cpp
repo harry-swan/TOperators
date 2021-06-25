@@ -30,11 +30,11 @@
 
 using namespace std;
 
-const unsigned char numThreads = 32;
+const unsigned char numThreads = 8;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 8;
+const unsigned char tCount = 5;
 const Z2 inverse_root2 = Z2::inverse_root2();
 const Z2 one = Z2::one();
 
@@ -49,7 +49,7 @@ const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-const unsigned int saveInterval = numThreads*10e3;
+const unsigned int saveInterval = numThreads*50000;
 
 // SO6 identity()
 // {

@@ -53,7 +53,7 @@ public:
         return t;
     };
 
-    static const SO6 identity()
+    static SO6 identity()
     {
         SO6 t;
         for (unsigned char k = 0; k < 6; k++)
