@@ -140,8 +140,9 @@ bool T_Hist::operator<(const T_Hist &other) const
     bool s0,s1;                           // These booleans flag the signs from the permutation list
     int8_t i0, i1;                             // Some integers the columns of interest as flagged by the permutation list
     std::vector<Z2> col0(6), col1(6);
+
     if(*this == *T_Hist::curr_history && &other == T_Hist::curr_history) return false;
-        if(*this == *T_Hist::curr_history) {
+    if(*this == *T_Hist::curr_history) {
         SO6 &tmp = *T_Hist::curr;
         for(int lexicographic_index = 0; lexicographic_index<6; lexicographic_index++) {
             for(int row = 0; row < 6; row++) {
