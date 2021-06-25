@@ -197,6 +197,10 @@ bool SO6::operator<(const SO6 &other) const
     return false;
 }
 
+
+std::vector<Z2> getCol(const char &i) {
+    
+}
 /** overloads == method to check equality of SO6 matrices
  *  @param other reference to SO6 to be checked against
  *  @return whether or not (*this) and other are equivalent

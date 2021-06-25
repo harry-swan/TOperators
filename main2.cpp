@@ -30,22 +30,26 @@
 
 using namespace std;
 
-const unsigned char numThreads = 50;
+const unsigned char numThreads = 32;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 10;
+const unsigned char tCount = 5;
 const Z2 inverse_root2 = Z2::inverse_root2();
 const Z2 one = Z2::one();
 
 //Turn this on if you want to read in saved data
 const bool tIO = false;
+
+//Turn this on if you want to suppress saves
+const bool noSave = false;
+
 //If tIO true, choose which tCount to begin generating from:
 const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-const unsigned int saveInterval = 50000;
+const unsigned int saveInterval = numThreads*10e3;
 
 // SO6 identity()
 // {
@@ -101,6 +105,7 @@ set<T_Hist> fileRead(unsigned char tc)
 // This appends set append to the T file
 void writeResults(unsigned char i, unsigned long long save, set<T_Hist> &append)
 {
+    if(noSave) return;
     auto start = chrono::high_resolution_clock::now();
     string fileName = "data/T" + to_string(i + 1) + ".sav";
     fstream write = fstream(fileName, std::ios_base::out);
@@ -158,10 +163,6 @@ void threadMult(vector<T_Hist> &threadVector, const unsigned char threadNum, con
 
 int main()
 {
-
-
-
-
     auto tbefore = chrono::high_resolution_clock::now();
 
     operationsPerThread = saveInterval / numThreads;
@@ -200,48 +201,46 @@ int main()
     // *  >>>>>>>>>>>>>>>>>>>>>>>>
     // */ 
 
-    std::cout << "Starting Test 1:\n";
-    bool test = true;
-    for(int tttt = 0; tttt < 100000; tttt++) {
-        std::vector<unsigned char> vec; 
-        for(int m = 0; m < 5; m++) {
-            unsigned char res = 1 + (rand() %15);
-            vec.push_back(res);
-        }
-        T_Hist tmp = T_Hist(vec);
-        SO6 first = tmp.reconstruct();
-        SO6 second = first;
-        second.reduced_rep();
-        std::vector<int8_t> perm = SO6::lexicographic_permutation(first);
+    // std::cout << "Starting Test 1:\n";
+    // bool test = true;
+    // for(int tttt = 0; tttt < 100000; tttt++) {
+    //     std::vector<unsigned char> vec; 
+    //     for(int m = 0; m < 5; m++) {
+    //         unsigned char res = 1 + (rand() %15);
+    //         vec.push_back(res);
+    //     }
+    //     T_Hist tmp = T_Hist(vec);
+    //     SO6 first = tmp.reconstruct();
+    //     SO6 second = first;
+    //     second.reduced_rep();
+    //     std::vector<int8_t> perm = SO6::lexicographic_permutation(first);
         
-        for(int row = 0; row<6; row++) {
-            for(int col = 0; col <6; col ++) {
-                int c = perm[col];
-                if(c < 0) {test = -first[-c-1][row]==second[col][row];}
-                else {test = first[c-1][row]==second[col][row];}
-                if(!test) break;
-            }
-            if(!test) break;
-        }
-        if(!test) break;
+    //     for(int row = 0; row<6; row++) {
+    //         for(int col = 0; col <6; col ++) {
+    //             int c = perm[col];
+    //             if(c < 0) {test = -first[-c-1][row]==second[col][row];}
+    //             else {test = first[c-1][row]==second[col][row];}
+    //             if(!test) break;
+    //         }
+    //         if(!test) break;
+    //     }
+    //     if(!test) break;
 
-        for(int row = 0; row<6; row++) {
-                for(int col = 0; col <6; col ++) {
-                    int c = perm[col];
-                    bool sign = c <0;
-                    test = !(SO6::lexLess(first[abs(c)-1],second[col],sign,0) || SO6::lexLess(second[col],first[abs(c)-1],0,sign)) ;
-                    if(!test) break;
-                }
-                if(!test) break;
-        }    
-        if(!test) break;
-
-
-    }
+    //     for(int row = 0; row<6; row++) {
+    //             for(int col = 0; col <6; col ++) {
+    //                 int c = perm[col];
+    //                 bool sign = c <0;
+    //                 test = !(SO6::lexLess(first[abs(c)-1],second[col],sign,0) || SO6::lexLess(second[col],first[abs(c)-1],0,sign)) ;
+    //                 if(!test) break;
+    //             }
+    //             if(!test) break;
+    //     }    
+    //     if(!test) break;
+    // }
 
     
-    if(test) std::cout << "Successful.\n";
-    else {std::cout << "Failed.\n";}
+    // if(test) std::cout << "Successful.\n";
+    // else {std::cout << "Failed.\n";}
      
      
     //timing
@@ -286,6 +285,11 @@ int main()
                 vector<T_Hist>::iterator end = threadVectors[i].end();
                 while (itr != end)
                 {
+                    T_Hist &tmp = *itr;
+                    T_Hist::curr_history = &tmp;
+                    SO6 tmp2 = T_Hist::curr_history->reconstruct();
+                    tmp2.reduced_rep();
+                    T_Hist::curr = &tmp2;
                     if (next.insert(*itr).second)
                     {
                         // This is only called if the insert into next succeeded
@@ -315,177 +319,3 @@ int main()
     std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n";
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-    // std::cout << "Test 3:\n";
-    // test = true;
-    // for(unsigned char i=1;i<16;i++) {
-    //     std::vector<unsigned char> v1 = {i};
-    //     T_Hist t1 = T_Hist(v1);
-    //     for(unsigned char j=1;j<16;j++) {
-    //         std::vector<unsigned char> v2 = {j};
-    //         T_Hist t2 = T_Hist(v2);
-    //         if(!(t1 < t2 || t2 < t1) && i!=j) {
-    //             // This shouldn't ever happen
-    //             for(int i : t1.getHistory()) std::cout << i << ",";
-    //             for(int j : t2.getHistory()) std::cout << j;
-    //             std::cout << ":\n\n";
-    //             SO6 s1 = t1.reconstruct();
-    //             SO6 s= s1;
-    //             for(int row = 0; row < 6; row ++) {
-    //                 for(int col = 0; col <6 ; col ++) {
-    //                     std::cout << "(" << static_cast<int>(s[col][row].val[0]) << static_cast<int>(s[col][row].val[1]) << ") ";
-    //                 }
-    //                 std::cout << "\n";
-    //             }
-    //             std::cout << "\n\n";
-    //             SO6 s2 = t2.reconstruct();
-    //             s=s2;
-    //             for(int row = 0; row < 6; row ++) {
-    //                 for(int col = 0; col <6 ; col ++) {
-    //                     std::cout << "(" << static_cast<int>(s[col][row].val[0]) << static_cast<int>(s[col][row].val[1]) << ") ";
-    //                 }
-    //                 std::cout << "\n";
-    //             }
-                
-    //             s=s1;
-    //             std::cout << "\n\n";
-    //             for(int i : SO6::column_signs(s)) std::cout << i << " ";
-    //             std::cout <<"\n";
-    //             perm = SO6::lexicographic_permutation(s);
-    //             for(int i : perm) std::cout << i << " ";
-    //             std::cout << "\n\n";
-    //             // s = t2.reconstruct();
-    //             for(int row = 0; row < 6; row ++) {
-    //                 for(int col = 0; col <6 ; col ++) {
-    //                             int signT = perm[col]<0;
-    //                             int colT = abs(perm[col])-1;
-    //                             if(signT) std::cout << "(" << static_cast<int>(-s[colT][row].val[0]) << static_cast<int>(-s[colT][row].val[1]) << ") ";
-    //                             if(!signT) std::cout << "(" << static_cast<int>(s[colT][row].val[0]) << static_cast<int>(s[colT][row].val[1]) << ") ";
-    //                 }
-    //                 std::cout << "\n";
-    //             }                
-    //             std::cout << "\n\n";
-    //             s.reduced_rep();
-    //             for(int row = 0; row < 6; row ++) {
-    //                 for(int col = 0; col <6 ; col ++) {
-    //                             std::cout << "(" << static_cast<int>(s[col][row].val[0]) << static_cast<int>(s[col][row].val[1]) << ") ";                    
-    //                 }
-    //                 std::cout << "\n";
-    //             }                                
-                
-    //             std::cout << "\n\n\n";
-
-    //             s=s2;
-    //             std::cout << "\n\n";
-    //             for(int i : SO6::column_signs(s)) std::cout << i << " ";
-    //             std::cout <<"\n";
-    //             perm = SO6::lexicographic_permutation(s);
-    //             for(int i : perm) std::cout << i << " ";
-    //             std::cout << "\n\n";
-    //             // s = t2.reconstruct();
-    //             for(int row = 0; row < 6; row ++) {
-    //                 for(int col = 0; col <6 ; col ++) {
-    //                             int signT = perm[col]<0;
-    //                             int colT = abs(perm[col])-1;
-    //                             if(signT) std::cout << "(" << static_cast<int>(-s[colT][row].val[0]) << static_cast<int>(-s[colT][row].val[1]) << ") ";
-    //                             if(!signT) std::cout << "(" << static_cast<int>(s[colT][row].val[0]) << static_cast<int>(s[colT][row].val[1]) << ") ";
-    //                 }
-    //                 std::cout << "\n";
-    //             }                
-    //             std::cout << "\n\n";
-    //             s.reduced_rep();
-    //             for(int row = 0; row < 6; row ++) {
-    //                 for(int col = 0; col <6 ; col ++) {
-    //                             std::cout << "(" << static_cast<int>(s[col][row].val[0]) << static_cast<int>(s[col][row].val[1]) << ") ";                    
-    //                 }
-    //                 std::cout << "\n";
-    //             }                                
-                
-    //             std::cout << "\n";
-    //             test = false;
-    //             break;
-
-    //         }
-
-    //         if(!(t1 < t2 || t2 < t1) && i==j) {
-    //             for(int i : t1.getHistory()) std::cout << i << " ";
-    //             for(int j : t2.getHistory()) std::cout << j << " ";
-    //             std::cout << ":\n\n";
-    //             SO6 s1 = t1.reconstruct();
-    //             SO6 original = s1;
-    //             SO6 s2;     // Lexsorted s1 by perm
-    //             for(int row = 0; row < 6; row ++) {
-    //                 for(int col = 0; col <6 ; col ++) {
-    //                     int colT = abs(perm[col])-1;
-    //                     s2[colT][row] = s1[col][row];
-    //                     if(perm[col] < 0) {
-    //                         std::cout << "colT is" << colT << perm[col] << "\n";
-    //                         s2[col][row].negate();
-    //                     }
-    //                 }
-    //                 std::cout << "\n";
-    //             }                
-    //             s1.reduced_rep(); // Lexsort s1
-    //             if(!(s1 == s2)) {
-    //                 std::cout << "problem!\n";
-    //                 for(int i : perm) std::cout << i << " ";
-    //                 std::cout << "\n\n";
-    //                 for(int row = 0; row < 6; row ++) {
-    //                     for(int col = 0; col <6 ; col ++) {
-    //                         std::cout << "(" << static_cast<int>(original[col][row].val[0]) << static_cast<int>(original[col][row].val[1]) << ") ";
-    //                     }
-    //                     std::cout << "\n";
-    //                 }
-    //                 std::cout << "\n\n";
-    //                 for(int row = 0; row < 6; row ++) {
-    //                     for(int col = 0; col <6 ; col ++) {
-    //                         std::cout << "(" << static_cast<int>(s1[col][row].val[0]) << static_cast<int>(s1[col][row].val[1]) << ") ";
-    //                     }
-    //                     std::cout << "\n";
-    //                 }
-    //                 std::cout << "\n\n";
-    //                 for(int row = 0; row < 6; row ++) {
-    //                     for(int col = 0; col <6 ; col ++) {
-    //                         std::cout << "(" << static_cast<int>(s2[col][row].val[0]) << static_cast<int>(s2[col][row].val[1]) << ") ";
-    //                     }
-    //                     std::cout << "\n";
-    //                 }
-    //                 test = false;
-    //                 break;
-    //             }
-    //         }
-    //         if(!test) break;
-    //     }
-    //     if(!test) break;
-    //     // std::cout << "\n";
-    // }
-    // if(test) std::cout << "Successful.\n";
-    // else std::cout << "Failed.\n";
-    // exit(0);

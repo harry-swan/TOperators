@@ -21,13 +21,14 @@ struct T_Hist::Node
 
 SO6 T_Hist::tsv[16] = {SO6::identity(), SO6::tMatrix(0, 1, 0), SO6::tMatrix(0, 2, 1), SO6::tMatrix(0, 3, 2), SO6::tMatrix(0, 4, 3), SO6::tMatrix(0, 5, 4), SO6::tMatrix(1, 2, 5), SO6::tMatrix(1, 3, 6), SO6::tMatrix(1, 4, 7), SO6::tMatrix(1, 5, 8), SO6::tMatrix(2, 3, 9), SO6::tMatrix(2, 4, 10), SO6::tMatrix(2, 5, 11), SO6::tMatrix(3, 4, 12), SO6::tMatrix(3, 5, 13), SO6::tMatrix(4, 5, 14)};
 T_Hist::Node *T_Hist::head = NULL;
+SO6 *T_Hist::curr = NULL;
+T_Hist *T_Hist::curr_history = NULL;
 
 T_Hist::T_Hist()
 {
     hist.clear();
-    if(perm.empty()) exit(0);
     SO6 tmp = reconstruct();
-    perm = SO6::lexicographic_permutation(tmp);
+    perm = {6,5,4,3,2,1};               // Identity would get reversed in order
 }
 
 T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
@@ -90,7 +91,7 @@ const SO6 T_Hist::tableLookup(std::vector<unsigned char> index)
  */
 SO6 T_Hist::reconstruct()
 {
-    if(hist.size()==0) return SO6::identity();
+    if(hist.size()==0) return SO6::identity();                  // This is needed, but I don't know why.
     std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
     std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
     SO6 ret = tableLookup(left) * tableLookup(right);
@@ -98,13 +99,14 @@ SO6 T_Hist::reconstruct()
 }
 
 SO6 T_Hist::reconstruct() const{
+    if(hist.size()==0) return SO6::identity();                  // This is needed, but I don't know why.
     std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
     std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
     SO6 ret = tableLookup(left) * tableLookup(right);
     return ret;
 }
 
-std::vector<Z2> T_Hist::reconstruct_col(int & col) const{
+std::vector<Z2> T_Hist::reconstruct_col(int8_t & col) const{
     std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
     std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
     SO6 first = tableLookup(left);
@@ -132,40 +134,54 @@ T_Hist T_Hist::operator*(T_Hist &other)
     return T_Hist(history);
 }
 
-bool T_Hist::operator==(T_Hist &other)
-{
-    return this->reconstruct() == other.reconstruct();
-}
-
-bool T_Hist::operator<(T_Hist &other)
-{
-    const T_Hist first = *this;
-    const T_Hist second = other;
-    return first < second;
-}
-
 // Compares the SO6 objects corresponding to *this and other using the lexicographic ordering
 bool T_Hist::operator<(const T_Hist &other) const
 {
-    // We can maybe speed this up by only reconstructing one column at a time. 
-    // This should be possible since we're only over multiplying together two matrices
-    // SO6 t = reconstruct();
-    // SO6 o = other.reconstruct();
-    bool signT,signO;
-    int colT, colO;
-    for(int col = 0; col<6 ; col++) {
-        
-        signT = perm[col]<0;
-        colT = abs(perm[col])-1;
-        std::vector<Z2> tcol = this->reconstruct_col(colT);             // Only need the column we need
-        
+    bool s0,s1;                           // These booleans flag the signs from the permutation list
+    int8_t i0, i1;                             // Some integers the columns of interest as flagged by the permutation list
+    std::vector<Z2> col0(6), col1(6);
+    if(*this == *T_Hist::curr_history && &other == T_Hist::curr_history) return false;
+        if(*this == *T_Hist::curr_history) {
+        SO6 &tmp = *T_Hist::curr;
+        for(int lexicographic_index = 0; lexicographic_index<6; lexicographic_index++) {
+            for(int row = 0; row < 6; row++) {
+                col0[row]=tmp[lexicographic_index][row];
+            }
+            i0 = abs(perm[lexicographic_index])-1;   
 
-        signO = other.perm[col]<0;
-        colO = abs(other.perm[col])-1;
-        std::vector<Z2> ocol = other.reconstruct_col(colO);             // Only need the column we need
+            s1 = other.perm[lexicographic_index]<0;
+            i1 = abs(other.perm[lexicographic_index])-1;
+            col1 = other.reconstruct_col(i1);
+            int8_t ret = SO6::lexComp(col0,col1,0,s1); // For whatever reason using lexLess here gives issues. 
+            if(ret != 0) return ret < 0;
+        }
+        return false;
+    } else if(&other == T_Hist::curr_history) {
+        SO6 &tmp = *T_Hist::curr;
+        for(int lexicographic_index = 0; lexicographic_index<6; lexicographic_index++) {
+            for(int row = 0; row < 6; row++) {
+                col0[row]=tmp[lexicographic_index][row];
+            }
+            i0 = abs(perm[lexicographic_index])-1;   
 
-        int8_t tmp = SO6::lexComp(tcol,ocol,signT,signO); // For whatever reason using lexLess here gives issues.
-        // int8_t tmp = SO6::lexComp(t[colT],o[colO],signT,signO); // For whatever reason using lexLess here gives issues.
+            s1 = perm[lexicographic_index]<0;
+            i1 = abs(perm[lexicographic_index])-1;
+            col1 = reconstruct_col(i1);
+            int8_t ret = SO6::lexComp(col0,col1,0,s1); // For whatever reason using lexLess here gives issues. 
+            if(ret != 0) return ret > 0;
+        }
+        return false;
+    }
+    for(int lexicographic_index = 0; lexicographic_index<6 ; lexicographic_index++) {
+        s0 = perm[lexicographic_index]<0;
+        i0 = abs(perm[lexicographic_index])-1;
+        col0 = reconstruct_col(i0);    
+
+        s1 = other.perm[lexicographic_index]<0;
+        i1 = abs(other.perm[lexicographic_index])-1;
+        col1 = other.reconstruct_col(i1);             
+
+        int8_t tmp = SO6::lexComp(col0,col1,s0,s1); // For whatever reason using lexLess here gives issues. 
         if(tmp != 0) return tmp < 0;
     } 
     return false;
@@ -180,3 +196,20 @@ std::ostream &operator<<(std::ostream &os, const T_Hist &h)
     }
     return os;
 }
+
+bool T_Hist::operator==(T_Hist &other)
+{
+    return &other == this;
+}
+
+bool T_Hist::operator==(T_Hist &other) const
+{
+    return &other == this;
+}
+
+// bool T_Hist::operator<(T_Hist &other)
+// {
+//     const T_Hist first = *this;
+//     const T_Hist second = other;
+//     return first < second;
+// }

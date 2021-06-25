@@ -212,7 +212,7 @@ public:
         return ret;
     }
 
-    static std::vector<Z2> multiply_only_column(SO6& first, SO6& second, int & col) {
+    static std::vector<Z2> multiply_only_column(SO6& first, SO6& second, int8_t & col) {
         std::vector<Z2> ret;
         for(int i = 0; i < 6; i++) ret.push_back(Z2(0,0,0));
         Z2 next;
@@ -223,6 +223,15 @@ public:
                 }
         }
         return ret;
+    }
+
+    static void print_mat(SO6 & mat) {
+        for (int row = 0; row < 6; row++) {
+            for (int col = 0; col < 6; col++) {
+                std::cout << "(" << static_cast<int>(mat[col][row].val[0]) << static_cast<int>(mat[col][row].val[1]) << static_cast<int>(mat[col][row].val[2]) << ") ";
+            }
+            std::cout << "\n";
+        }
     }
 
     // static const SO6 permute_matrix(std::vector<int> &perms)

@@ -7,10 +7,11 @@ public:
     T_Hist(std::vector<unsigned char> &);
     SO6 reconstruct(); // Gets an SO6 object by multiplying together the right and left hist
     SO6 reconstruct() const; // Gets an SO6 object by multiplying together the right and left hist
-    std::vector<Z2> reconstruct_col(int & col) const; // Gets an SO6 object by multiplying together the right and left hist
+    std::vector<Z2> reconstruct_col(int8_t &) const; // Gets an SO6 object by multiplying together the right and left hist
     T_Hist operator*(T_Hist &); // Multiplication is history concatenation
     bool operator==(T_Hist &);
-    bool operator<(T_Hist &);
+    bool operator==(T_Hist &) const;
+    // bool operator<(T_Hist &);
     bool operator<(const T_Hist &) const;
     friend std::ostream &operator<<(std::ostream &, const T_Hist &);
 
@@ -26,10 +27,10 @@ public:
     static void tableInsert(Node *, Node *, unsigned char); // Populates the so6 tree
     static void tableDelete(Node *, Node *); // Frees all memory allocated in the so6 tree
     static const SO6 tableLookup(std::vector<unsigned char>); // Get the matrix corresponding to a history vector
+    static SO6 *curr;
+    static T_Hist *curr_history;
 
-    
-    std::vector<int8_t> perm = {1,2,3,4,5,6};
 private:
     std::vector<unsigned char> hist;
-    
+    std::vector<int8_t> perm = {1,2,3,4,5,6};    
 };
