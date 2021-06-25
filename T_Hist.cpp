@@ -104,6 +104,16 @@ SO6 T_Hist::reconstruct() const{
     return ret;
 }
 
+std::vector<Z2> T_Hist::reconstruct_col(int & col) const{
+    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
+    std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
+    SO6 first = tableLookup(left);
+    SO6 second = tableLookup(right);
+    std::vector<Z2> ret = SO6::multiply_only_column(first,second,col);
+    return ret;
+}
+
+
 // Does nothing, will be useful if the logic is needed in multiple functions
 // such as * and the constructor
 void T_Hist::histInsert(unsigned char h)
@@ -139,17 +149,23 @@ bool T_Hist::operator<(const T_Hist &other) const
 {
     // We can maybe speed this up by only reconstructing one column at a time. 
     // This should be possible since we're only over multiplying together two matrices
-    SO6 t = reconstruct();
-    SO6 o = other.reconstruct();
+    // SO6 t = reconstruct();
+    // SO6 o = other.reconstruct();
     bool signT,signO;
-    int8_t colT, colO;
+    int colT, colO;
     for(int col = 0; col<6 ; col++) {
+        
         signT = perm[col]<0;
         colT = abs(perm[col])-1;
+        std::vector<Z2> tcol = this->reconstruct_col(colT);             // Only need the column we need
         
+
         signO = other.perm[col]<0;
         colO = abs(other.perm[col])-1;
-        int8_t tmp = SO6::lexComp(t[colT],o[colO],signT,signO); // For whatever reason using lexLess here gives issues.
+        std::vector<Z2> ocol = other.reconstruct_col(colO);             // Only need the column we need
+
+        int8_t tmp = SO6::lexComp(tcol,ocol,signT,signO); // For whatever reason using lexLess here gives issues.
+        // int8_t tmp = SO6::lexComp(t[colT],o[colO],signT,signO); // For whatever reason using lexLess here gives issues.
         if(tmp != 0) return tmp < 0;
     } 
     return false;
