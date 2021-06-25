@@ -24,24 +24,7 @@
 //     }
 //     return 0;
 // }
-int lexComp(const Z2 first[6], const Z2 second[6])
-{
-    // Z2 f[6],s[6];
-    // for(int i = 0; i<6; i++) {
-    //     f[i]=first[i];
-    //     s[i]=second[i];
-    // }
-    // if(lexLess(f,s)) return -1;
-    // if(lexLess(s,f)) return 1;
-    for (char i = 0; i < 6; i++)
-    {
-        if (first[i] < second[i])
-            return -1;
-        if (second[i] < first[i])
-            return 1;
-    }
-    return 0;
-}
+
 
 /**
  * Method to compare two Z2 arrays of length 6 lexicographically

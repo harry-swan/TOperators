@@ -119,14 +119,39 @@ public:
     {
         for (unsigned char i = 0; i < 6; i++)
         {
-            Z2 f = Z2((1 - 2 * signA), 0, 0);
-            Z2 s = Z2((1 - 2 * signB), 0, 0);
-            f = f * first[i];
-            s = s * second[i];
-            if (f != s)
-                return f < s;
+            Z2 f = first[i];
+            Z2 s = second[i];
+            if(signA) f.negate();
+            if(signB) s.negate();
+            if (f != s) return f < s;
         }
         return false;
+    }
+
+    static int8_t lexComp(const Z2 first[6], const Z2 second[6])
+    {
+        for (char i = 0; i < 6; i++)
+        {
+            if (first[i] < second[i])
+                return -1;
+            if (second[i] < first[i])
+                return 1;
+        }
+        return 0;
+    }
+
+    static int8_t lexComp(Z2 *first, Z2 *second, bool signA, bool signB)
+    {
+        for (unsigned char i = 0; i < 6; i++)
+        {
+            Z2 f = first[i];
+            Z2 s = second[i];
+            if(signA) f.negate();
+            if(signB) s.negate();
+            if (f < s) return 1;
+            if (f > s) return -1;
+        }
+        return 0;
     }
 
     static std::vector<bool> column_signs(SO6 &mat)
@@ -139,34 +164,55 @@ public:
             {
                 row++;
             }
-            bool tmp = (mat[col][row] < 0);
             ret[col] = (mat[col][row] < 0);
         }
         return ret;
     }
 
-    static std::vector<int> lexicographic_permutation(SO6 &mat)
+    static std::vector<int8_t> lexicographic_permutation(SO6 &mat)
     {
         std::vector<bool> signs = column_signs(mat);
-        std::vector<int> index(6, 0);
+        std::vector<int8_t> index(6, 0);
         for (int i = 0; i < 6; i++)
-            index[i] = i;
+            if(signs[i]) index[i] = -i-1;
+            else index[i] = i+1;
         std::sort(index.begin(), index.end(),
                   [&](const int &a, const int &b)
                   {
-                      return SO6::lexLess(mat[a], mat[b], signs[a], signs[b]);
+                      return SO6::lexLess(mat[abs(a)-1], mat[abs(b)-1], signs[abs(a)-1], signs[abs(b)-1]);
                   });
-        for (int i = 0; i < 6; i++)
-        {
-            if (signs[index[i]])
-            {
-                index[i] = -(index[i] + 1); // Need negation and cannot negate 0. Can probably be handled without 1 indexing
-            }
-        }
         return index;
     }
 
-private:
+    static SO6 const permute_matrix(const std::vector<int> &perms)
+    {
+        SO6 ret;
+        for(int col = 0; col < 6; col++) {
+                if (perms[col] > 0) {
+                    ret[col][perms[col]-1] = 1;
+                }
+                else {
+                    ret[col][-perms[col]-1] = -1;
+                }
+        }
+        return ret;
+    }
+
+    // static const SO6 permute_matrix(std::vector<int> &perms)
+    // {
+    //     SO6 ret;
+    //     for(int col = 0; col < 6; col++) {
+    //             if (perms[col] > 0) {
+    //                 ret[col][perms[col]-1] = 1;
+    //             }
+    //             else {
+    //                 ret[col][-perms[col]-1] = -1;
+    //             }
+    //     }
+    //     return ret;
+    // }
+
+// private:
     Z2 arr[6][6];
     // std::vector<char> hist;
     // std::string name;

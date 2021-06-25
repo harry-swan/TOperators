@@ -25,11 +25,16 @@ T_Hist::Node *T_Hist::head = NULL;
 T_Hist::T_Hist()
 {
     hist.clear();
+    if(perm.empty()) exit(0);
+    SO6 tmp = reconstruct();
+    perm = SO6::lexicographic_permutation(tmp);
 }
 
 T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
 {
     hist = new_hist;
+    SO6 tmp = reconstruct();
+    perm = SO6::lexicographic_permutation(tmp);
 }
 
 void T_Hist::initHead()
@@ -68,7 +73,7 @@ void T_Hist::tableDelete(Node *t, Node *p)
     }
 }
 
-SO6 T_Hist::tableLookup(std::vector<unsigned char> index)
+const SO6 T_Hist::tableLookup(std::vector<unsigned char> index)
 {
     Node *node = T_Hist::head;
     for (char i : index)
@@ -85,10 +90,17 @@ SO6 T_Hist::tableLookup(std::vector<unsigned char> index)
  */
 SO6 T_Hist::reconstruct()
 {
+    if(hist.size()==0) return SO6::identity();
     std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
     std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
     SO6 ret = tableLookup(left) * tableLookup(right);
-    ret.reduced_rep();
+    return ret;
+}
+
+SO6 T_Hist::reconstruct() const{
+    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
+    std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
+    SO6 ret = tableLookup(left) * tableLookup(right);
     return ret;
 }
 
@@ -117,15 +129,30 @@ bool T_Hist::operator==(T_Hist &other)
 
 bool T_Hist::operator<(T_Hist &other)
 {
-    return this->reconstruct() < other.reconstruct();
+    const T_Hist first = *this;
+    const T_Hist second = other;
+    return first < second;
 }
 
 // Compares the SO6 objects corresponding to *this and other using the lexicographic ordering
 bool T_Hist::operator<(const T_Hist &other) const
 {
-    T_Hist t = *this;
-    T_Hist o = other;
-    return t.reconstruct() < o.reconstruct();
+    // We can maybe speed this up by only reconstructing one column at a time. 
+    // This should be possible since we're only over multiplying together two matrices
+    SO6 t = reconstruct();
+    SO6 o = other.reconstruct();
+    bool signT,signO;
+    int8_t colT, colO;
+    for(int col = 0; col<6 ; col++) {
+        signT = perm[col]<0;
+        colT = abs(perm[col])-1;
+        
+        signO = other.perm[col]<0;
+        colO = abs(other.perm[col])-1;
+        int8_t tmp = SO6::lexComp(t[colT],o[colO],signT,signO); // For whatever reason using lexLess here gives issues.
+        if(tmp != 0) return tmp < 0;
+    } 
+    return false;
 }
 
 // Prints every element of the history vector for T_Hist h
