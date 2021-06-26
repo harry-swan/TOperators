@@ -6,7 +6,7 @@ public:
     T_Hist();
     T_Hist(std::vector<unsigned char> &);
     SO6 reconstruct(); // Gets an SO6 object by multiplying together the right and left hist
-    std::vector<Z2> reconstruct_col(int8_t &) const; // Gets an SO6 object by multiplying together the right and left hist
+    std::vector<Z2> reconstruct_col(char &) const; // Gets an SO6 object by multiplying together the right and left hist
     T_Hist operator*(T_Hist &); // Multiplication is history concatenation
     bool operator==(T_Hist &);
     bool operator==(T_Hist &) const;
@@ -31,5 +31,5 @@ public:
 
 private:
     std::vector<unsigned char> hist;
-    std::vector<int8_t> perm = {1,2,3,4,5,6};    
+    std::vector<char> perm;    
 };

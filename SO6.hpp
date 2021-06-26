@@ -128,7 +128,7 @@ public:
         return false;
     }
 
-    static int8_t lexComp(const Z2 first[6], const Z2 second[6])
+    static char lexComp(const Z2 first[6], const Z2 second[6])
     {
         for (char i = 0; i < 6; i++)
         {
@@ -140,7 +140,7 @@ public:
         return 0;
     }
 
-    static int8_t lexComp(Z2 *first, Z2 *second, bool signA, bool signB)
+    static char lexComp(Z2 *first, Z2 *second, bool signA, bool signB)
     {
         for (unsigned char i = 0; i < 6; i++)
         {
@@ -154,7 +154,7 @@ public:
         return 0;
     }
 
-    static int8_t lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool signA, bool signB)
+    static char lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool signA, bool signB)
     {
         for (unsigned char i = 0; i < 6; i++)
         {
@@ -183,11 +183,11 @@ public:
         return ret;
     }
 
-    static std::vector<int8_t> lexicographic_permutation(SO6 &mat)
+    static std::vector<char> lexicographic_permutation(SO6 &mat)
     {
         std::vector<bool> signs = column_signs(mat);
-        std::vector<int8_t> index(6, 0);
-        for (int i = 0; i < 6; i++)
+        std::vector<char> index(6, 0);
+        for (unsigned char i = 0; i < 6; i++)
             if(signs[i]) index[i] = -i-1;
             else index[i] = i+1;
         std::sort(index.begin(), index.end(),
@@ -212,7 +212,7 @@ public:
         return ret;
     }
 
-    static std::vector<Z2> multiply_only_column(SO6& first, SO6& second, int8_t & col) {
+    static std::vector<Z2> multiply_only_column(SO6& first, SO6& second, char & col) {
         std::vector<Z2> ret;
         for(int i = 0; i < 6; i++) ret.push_back(Z2(0,0,0));
         Z2 next;

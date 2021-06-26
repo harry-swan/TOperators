@@ -5,6 +5,7 @@
 #include <sstream>
 #include <bitset>
 #include <iterator>
+#include <utility>
 #include <stdint.h>
 #include "Z2.hpp"
 #include "SO6.hpp"
@@ -33,7 +34,9 @@ T_Hist::T_Hist()
 
 T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
 {
-    hist = new_hist;
+    hist.clear();
+    for (unsigned char h : new_hist)
+        histInsert(h);
     SO6 tmp = reconstruct();
     perm = SO6::lexicographic_permutation(tmp);
 }
@@ -41,8 +44,7 @@ T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
 void T_Hist::initHead()
 {
     T_Hist::head = new Node;
-    T_Hist::head->so6 = new SO6;
-    *(T_Hist::head->so6) = SO6::identity();
+    T_Hist::head->so6 = new SO6(SO6::identity());
 }
 
 // Recursively populates the so6 tree up to depth multiplications
@@ -56,8 +58,7 @@ void T_Hist::tableInsert(Node *t, Node *p, unsigned char depth)
             Node *node = new Node;
             t->next[i] = node;
             node->prev = p;
-            node->so6 = new SO6;
-            *(node->so6) = *(t->so6) * T_Hist::tsv[++i];
+            node->so6 = new SO6(*(t->so6) * T_Hist::tsv[++i]);
             tableInsert(node, t, depth - 1);
         }
     }
@@ -80,9 +81,15 @@ void T_Hist::tableDelete(Node *t, Node *p)
 SO6* T_Hist::tableLookup(std::vector<unsigned char> &index)
 {
     Node *node = T_Hist::head;
-    for (char i : index)
+    if (index.size() == 0)
+        return node->so6; // Returns a pointer to the identity
+    unsigned char end = 2*index.size() - (index.back() >> 4 == 0);
+    // Skip the first 4 bits if they are 0
+    unsigned char i = ((index[0] & 15) == 0);
+    for (i; i < end; i++)
     {
-        node = node->next[i - 1];
+        //std::cout << +((index[i/2] >> (4*(i%2))) & 15) << "\n";
+        node = node->next[((index[i/2] >> (4*(i%2))) & 15) - 1];
     }
     return node->so6;
 }
@@ -94,45 +101,69 @@ SO6* T_Hist::tableLookup(std::vector<unsigned char> &index)
  */
 SO6 T_Hist::reconstruct()
 {
-    if(hist.size()==0) return SO6::identity();                  // This is needed, but I don't know why.
-    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
+    if(hist.size()==0) return SO6::identity();                  // This is needed, but I don't know why. -Michael
+    // @Michael it is because you call reconstruct() in the default constructor T_Hist(). -Swan
+    unsigned char splitMiddleBit = (hist.size() % 2) && ((hist.back() & 240) != 0);
+    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2 + splitMiddleBit);
     std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
+    if(splitMiddleBit)
+    {
+        left.back() = left.back() & 15;
+        right[0] = right[0] & 240;
+    }
     return *tableLookup(left) * *tableLookup(right);
 }
 
-std::vector<Z2> T_Hist::reconstruct_col(int8_t & col) const{
-    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2);
+std::vector<Z2> T_Hist::reconstruct_col(char & col) const{
+    if(hist.size()==0) return {Z2(), Z2(), Z2(), Z2(), Z2(), Z2()};                  // This is needed, but I don't know why.
+    // The math says we only need to split if we have 2+4k hist values stored for some integer k
+    unsigned char splitMiddleBit = (hist.size() % 2) && ((hist.back() & 240) != 0);
+    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2 + splitMiddleBit);
     std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
+    if(splitMiddleBit)
+    {
+        left.back() = left.back() & 15;
+        right[0] = right[0] & 240;
+    }
+    //std::cout << *this << "\n";
     SO6* first = tableLookup(left);
     SO6* second = tableLookup(right);
     std::vector<Z2> ret = SO6::multiply_only_column(*first,*second,col);
     return ret;
 }
 
-
-// Does nothing, will be useful if the logic is needed in multiple functions
-// such as * and the constructor
 void T_Hist::histInsert(unsigned char h)
 {
-    // Might want this to be a function
+    if (hist.size() && hist.back() >> 4 == 0)
+        hist.back() = hist.back() | (h << 4);
+    else
+        hist.push_back(h);
 }
 
 // Concatenates the history vectors into one T_Hist object
 T_Hist T_Hist::operator*(T_Hist &other)
 {
-    std::vector<unsigned char> history;
-    for (unsigned char i : hist)
-        history.push_back(i);
-    for (unsigned char i : other.hist)
-        history.push_back(i);
-    return T_Hist(history);
+    T_Hist history;
+    if (hist.size())
+    {
+        unsigned char end = 2*hist.size() - ((hist.back() & 240) == 0);
+        for (unsigned char i = ((hist.back() & 15) == 0); i < end; i++)
+            history.histInsert(((hist[i/2] >> (4*(i%2))) & 15));
+    }
+    if (other.hist.size())
+    {
+        unsigned char end = 2*other.hist.size() - ((other.hist.back() & 240) == 0);
+        for (unsigned char i = ((other.hist.back() & 15) == 0); i < end; i++)
+            history.histInsert(((other.hist[i/2] >> (4*(i%2))) & 15));
+    }
+    return history;
 }
 
 // Compares the SO6 objects corresponding to *this and other using the lexicographic ordering
 bool T_Hist::operator<(const T_Hist &other) const
 {
     bool s0,s1;                           // These booleans flag the signs from the permutation list
-    int8_t i0, i1;                             // Some integers the columns of interest as flagged by the permutation list
+    char i0, i1;                             // Some integers the columns of interest as flagged by the permutation list
     std::vector<Z2> col0(6), col1(6);
 
     if(*this == *T_Hist::curr_history && &other == T_Hist::curr_history) return false;
@@ -185,9 +216,11 @@ bool T_Hist::operator<(const T_Hist &other) const
 // Prints every element of the history vector for T_Hist h
 std::ostream &operator<<(std::ostream &os, const T_Hist &h)
 {
-    for (char i : h.hist)
+    if(h.hist.size()==0) return os;                  // This is needed, but I don't know why.
+    unsigned char end = 2*h.hist.size() - ((h.hist.back() & 240) == 0);
+    for (unsigned char i = 0; i < end; i++)
     {
-        os << std::hex << +(i);
+        os << std::hex << ((h.hist[i/2] >> (4*(i%2))) & 15);
     }
     return os;
 }

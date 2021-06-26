@@ -30,11 +30,11 @@
 
 using namespace std;
 
-const unsigned char numThreads = 8;
+const unsigned char numThreads = 1;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 5;
+const unsigned char tCount = 3;
 const Z2 inverse_root2 = Z2::inverse_root2();
 const Z2 one = Z2::one();
 
@@ -68,6 +68,7 @@ const unsigned int saveInterval = numThreads*50000;
 const SO6 tMatrix(unsigned char i, unsigned char j, char matNum) { return SO6::tMatrix(i, j, matNum); }
 
 // File reading is no functional at the moment, it would need to be made to work with the T_Hist changes
+// It also reads in only one hist per character
 set<T_Hist> fileRead(unsigned char tc)
 {
     ifstream tfile;
@@ -287,6 +288,7 @@ int main()
                 {
                     T_Hist &tmp = *itr;
                     T_Hist::curr_history = &tmp;
+                    //cout << *T_Hist::curr_history << "\n";
                     SO6 tmp2 = T_Hist::curr_history->reconstruct();
                     tmp2.reduced_rep();
                     T_Hist::curr = &tmp2;
