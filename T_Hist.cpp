@@ -28,7 +28,7 @@ T_Hist *T_Hist::curr_history = NULL;
 T_Hist::T_Hist()
 {
     hist.clear();
-    SO6 tmp = reconstruct();
+    // SO6 tmp = reconstruct();
     perm = {6,5,4,3,2,1};               // Identity would get reversed in order
 }
 
@@ -37,8 +37,12 @@ T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
     hist.clear();
     for (unsigned char h : new_hist)
         histInsert(h);
+    for(int i : hist) std::cout << i << " ";
+    std::cout <<"\n";
     SO6 tmp = reconstruct();
     perm = SO6::lexicographic_permutation(tmp);
+    for(int i : perm) std::cout << i << " ";
+    std::cout <<"\n";
 }
 
 void T_Hist::initHead()
@@ -187,6 +191,7 @@ bool T_Hist::operator<(const T_Hist &other) const
                 if(ret != 0) return ret > 0;
             }
         }
+        std::cout << "here";
         return false;
     } 
 

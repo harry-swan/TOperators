@@ -288,7 +288,6 @@ int main()
                 {
                     T_Hist &tmp = *itr;
                     T_Hist::curr_history = &tmp;
-                    //cout << *T_Hist::curr_history << "\n";
                     SO6 tmp2 = T_Hist::curr_history->reconstruct();
                     tmp2.reduced_rep();
                     T_Hist::curr = &tmp2;
