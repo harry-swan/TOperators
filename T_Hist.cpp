@@ -137,49 +137,43 @@ T_Hist T_Hist::operator*(T_Hist &other)
 // Compares the SO6 objects corresponding to *this and other using the lexicographic ordering
 bool T_Hist::operator<(const T_Hist &other) const
 {
-    bool s0,s1;                           // These booleans flag the signs from the permutation list
+    bool s0;
+    bool s1;                                // These booleans flag the signs from the permutation list
     int8_t i0, i1;                             // Some integers the columns of interest as flagged by the permutation list
     std::vector<Z2> col0(6), col1(6);
 
-    if(*this == *T_Hist::curr_history && &other == T_Hist::curr_history) return false;
-    if(*this == *T_Hist::curr_history) {
-        SO6 &tmp = *T_Hist::curr;
-        for(int lexicographic_index = 0; lexicographic_index<6; lexicographic_index++) {
-            for(int row = 0; row < 6; row++) {
-                col0[row]=tmp[lexicographic_index][row];
-            }
-            i0 = abs(perm[lexicographic_index])-1;   
+    if(*this == *T_Hist::curr_history || &other == T_Hist::curr_history) {
+        s0 = false;
+        SO6 &first = *T_Hist::curr;
+        for(int lex_index = 0; lex_index<6; lex_index++) {
+            
+            for(int row = 0; row < 6; row++) col0[row]=first[lex_index][row];           // May be possible to make faster by doing away with this constructor and passing the array to lexComp below somehow
 
-            s1 = other.perm[lexicographic_index]<0;
-            i1 = abs(other.perm[lexicographic_index])-1;
-            col1 = other.reconstruct_col(i1);
-            int8_t ret = SO6::lexComp(col0,col1,0,s1); // For whatever reason using lexLess here gives issues. 
-            if(ret != 0) return ret < 0;
+            if(*this == *T_Hist::curr_history) {
+                s1 = other.perm[lex_index]<0;
+                i1 = abs(other.perm[lex_index])-1;
+                col1 = other.reconstruct_col(i1);
+                int8_t ret = SO6::lexComp(col0,col1,s0,s1); // For whatever reason using lexLess here gives issues. 
+                if(ret != 0) return ret < 0;
+            } else {
+                s1 = perm[lex_index]<0;
+                i1 = abs(perm[lex_index])-1;
+                col1 = reconstruct_col(i1);
+                int8_t ret = SO6::lexComp(col0,col1,s0,s1); // For whatever reason using lexLess here gives issues. 
+                if(ret != 0) return ret > 0;
+            }
         }
         return false;
-    } else if(&other == T_Hist::curr_history) {
-        SO6 &tmp = *T_Hist::curr;
-        for(int lexicographic_index = 0; lexicographic_index<6; lexicographic_index++) {
-            for(int row = 0; row < 6; row++) {
-                col0[row]=tmp[lexicographic_index][row];
-            }
-            i0 = abs(perm[lexicographic_index])-1;   
+    } 
 
-            s1 = perm[lexicographic_index]<0;
-            i1 = abs(perm[lexicographic_index])-1;
-            col1 = reconstruct_col(i1);
-            int8_t ret = SO6::lexComp(col0,col1,0,s1); // For whatever reason using lexLess here gives issues. 
-            if(ret != 0) return ret > 0;
-        }
-        return false;
-    }
-    for(int lexicographic_index = 0; lexicographic_index<6 ; lexicographic_index++) {
-        s0 = perm[lexicographic_index]<0;
-        i0 = abs(perm[lexicographic_index])-1;
+    // If we make it this far, we have to rebuild both matrices. Not sure when/why this happens. Probably called somewhere in the set insert.
+    for(int lex_index = 0; lex_index<6 ; lex_index++) {
+        s0 = perm[lex_index]<0;
+        i0 = abs(perm[lex_index])-1;
         col0 = reconstruct_col(i0);    
 
-        s1 = other.perm[lexicographic_index]<0;
-        i1 = abs(other.perm[lexicographic_index])-1;
+        s1 = other.perm[lex_index]<0;
+        i1 = abs(other.perm[lex_index])-1;
         col1 = other.reconstruct_col(i1);             
 
         int8_t tmp = SO6::lexComp(col0,col1,s0,s1); // For whatever reason using lexLess here gives issues. 

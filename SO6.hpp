@@ -140,7 +140,7 @@ public:
         return 0;
     }
 
-    static int8_t lexComp(Z2 *first, Z2 *second, bool signA, bool signB)
+    static int8_t lexComp(Z2 *first, Z2 *second, bool &signA, bool &signB)
     {
         for (unsigned char i = 0; i < 6; i++)
         {
@@ -154,7 +154,7 @@ public:
         return 0;
     }
 
-    static int8_t lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool signA, bool signB)
+    static int8_t lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool &signA, bool &signB)
     {
         for (unsigned char i = 0; i < 6; i++)
         {
@@ -171,13 +171,11 @@ public:
     static std::vector<bool> column_signs(SO6 &mat)
     {
         std::vector<bool> ret(6, 0);
+        unsigned char row;
         for (unsigned char col = 0; col < 6; col++)
         {
-            unsigned char row = 0;
-            while (mat[col][row] == 0)
-            {
-                row++;
-            }
+            row = 0;
+            while (mat[col][row] == 0) row++;
             ret[col] = (mat[col][row] < 0);
         }
         return ret;
@@ -213,8 +211,7 @@ public:
     }
 
     static std::vector<Z2> multiply_only_column(SO6& first, SO6& second, int8_t & col) {
-        std::vector<Z2> ret;
-        for(int i = 0; i < 6; i++) ret.push_back(Z2(0,0,0));
+        std::vector<Z2> ret(6);
         Z2 next;
         for(int row = 0; row < 6; row++) {
                 for (char k = 0; k < 6; k++) {
