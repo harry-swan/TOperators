@@ -37,12 +37,8 @@ T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
     hist.clear();
     for (unsigned char h : new_hist)
         histInsert(h);
-    for(int i : hist) std::cout << i << " ";
-    std::cout <<"\n";
     SO6 tmp = reconstruct();
     perm = SO6::lexicographic_permutation(tmp);
-    for(int i : perm) std::cout << i << " ";
-    std::cout <<"\n";
 }
 
 void T_Hist::initHead()
@@ -129,7 +125,6 @@ std::vector<Z2> T_Hist::reconstruct_col(char & col) const{
         left.back() = left.back() & 15;
         right[0] = right[0] & 240;
     }
-    //std::cout << *this << "\n";
     SO6* first = tableLookup(left);
     SO6* second = tableLookup(right);
     std::vector<Z2> ret = SO6::multiply_only_column(*first,*second,col);
@@ -147,7 +142,7 @@ void T_Hist::histInsert(unsigned char h)
 // Concatenates the history vectors into one T_Hist object
 T_Hist T_Hist::operator*(T_Hist &other)
 {
-    T_Hist history;
+    T_Hist history;         // Flagged for correction, redo constructors
     if (hist.size())
     {
         unsigned char end = 2*hist.size() - ((hist.back() & 240) == 0);
@@ -160,6 +155,8 @@ T_Hist T_Hist::operator*(T_Hist &other)
         for (unsigned char i = ((other.hist.back() & 15) == 0); i < end; i++)
             history.histInsert(((other.hist[i/2] >> (4*(i%2))) & 15));
     }
+    SO6 tmp = history.reconstruct();
+    history.perm = SO6::lexicographic_permutation(tmp);
     return history;
 }
 
@@ -191,7 +188,6 @@ bool T_Hist::operator<(const T_Hist &other) const
                 if(ret != 0) return ret > 0;
             }
         }
-        std::cout << "here";
         return false;
     } 
 
