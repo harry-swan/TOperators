@@ -47,16 +47,6 @@ Z2 Z2::operator+(Z2 &other)
     return tmp;
 }
 
-/**
- * Overloads + operator for Z2
- * @param other reference to Z2 object to be added
- * @return summation the sum of other and *this
- */
-Z2 Z2::operator+(Z2 & first, Z2 &second)
-{
-    first += second;
-    return first;
-}
 
 /**
  * Overloads += operator for Z2
