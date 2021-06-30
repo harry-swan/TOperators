@@ -16,7 +16,7 @@ public:
     friend std::ostream &operator<<(std::ostream &, const T_Hist &);
 
     std::vector<unsigned char> getHistory() { return hist; };
-    void histInsert(unsigned char); // Currently unused
+    void histInsert(unsigned char, unsigned char); // Currently unused
 
     static void make_T_matrices();
     static SO6 tsv[16];

@@ -34,7 +34,7 @@ T_Hist::T_Hist()
 
 T_Hist::T_Hist(unsigned char s)
 {
-    hist.reserve(s);
+    hist.resize(s, 0);
     // SO6 tmp = reconstruct();
     perm = {6,5,4,3,2,1};               // Identity would get reversed in order
 }
@@ -42,9 +42,10 @@ T_Hist::T_Hist(unsigned char s)
 T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
 {
     unsigned char s = new_hist.size();
-    hist.reserve(s%2 + s/2);
+    hist.resize(s%2 + s/2, 0);
+    unsigned char i = 0;
     for (unsigned char h : new_hist)
-        histInsert(h);
+        histInsert(h, i++);
     SO6 tmp = reconstruct();
     perm = SO6::lexicographic_permutation(tmp);
 }
@@ -139,12 +140,9 @@ std::vector<Z2> T_Hist::reconstruct_col(char & col) const{
     return ret;
 }
 
-void T_Hist::histInsert(unsigned char h)
+void T_Hist::histInsert(unsigned char h, unsigned char i)
 {
-    if (hist.size() && hist.back() >> 4 == 0)
-        hist.back() = hist.back() | (h << 4);
-    else
-        hist.push_back(h);
+    hist[i/2] |= h << 4*(i%2);
 }
 
 // Concatenates the history vectors into one T_Hist object
@@ -153,18 +151,19 @@ T_Hist T_Hist::operator*(T_Hist &other)
     unsigned char extra = 0;
     if (hist.size() && other.hist.size())
         extra = hist.back() < 16 && other.hist.back() < 16;
+    unsigned char idx = 0;
     T_Hist history(hist.size() + other.hist.size() - extra);
     if (hist.size())
     {
         unsigned char end = 2*hist.size() - (hist.back() < 16);
         for (unsigned char i = (hist.back() & 15 == 0); i < end; i++)
-            history.histInsert(((hist[i/2] >> (4*(i%2))) & 15));
+            history.histInsert(((hist[i/2] >> (4*(i%2))) & 15), idx++);
     }
     if (other.hist.size())
     {
         unsigned char end = 2*other.hist.size() - (other.hist.back() < 16);
         for (unsigned char i = (other.hist.back() & 15 == 0); i < end; i++)
-            history.histInsert(((other.hist[i/2] >> (4*(i%2))) & 15));
+            history.histInsert(((other.hist[i/2] >> (4*(i%2))) & 15), idx++);
     }
     SO6 tmp = history.reconstruct();
     history.perm = SO6::lexicographic_permutation(tmp);
