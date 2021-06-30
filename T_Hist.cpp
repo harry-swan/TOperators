@@ -32,9 +32,17 @@ T_Hist::T_Hist()
     perm = {6,5,4,3,2,1};               // Identity would get reversed in order
 }
 
+T_Hist::T_Hist(unsigned char s)
+{
+    hist.reserve(s);
+    // SO6 tmp = reconstruct();
+    perm = {6,5,4,3,2,1};               // Identity would get reversed in order
+}
+
 T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
 {
-    hist.clear();
+    unsigned char s = new_hist.size();
+    hist.reserve(s%2 + s/2);
     for (unsigned char h : new_hist)
         histInsert(h);
     SO6 tmp = reconstruct();
@@ -142,17 +150,20 @@ void T_Hist::histInsert(unsigned char h)
 // Concatenates the history vectors into one T_Hist object
 T_Hist T_Hist::operator*(T_Hist &other)
 {
-    T_Hist history;         // Flagged for correction, redo constructors
+    unsigned char extra = 0;
+    if (hist.size() && other.hist.size())
+        extra = hist.back() < 16 && other.hist.back() < 16;
+    T_Hist history(hist.size() + other.hist.size() - extra);
     if (hist.size())
     {
-        unsigned char end = 2*hist.size() - ((hist.back() & 240) == 0);
-        for (unsigned char i = ((hist.back() & 15) == 0); i < end; i++)
+        unsigned char end = 2*hist.size() - (hist.back() < 16);
+        for (unsigned char i = (hist.back() & 15 == 0); i < end; i++)
             history.histInsert(((hist[i/2] >> (4*(i%2))) & 15));
     }
     if (other.hist.size())
     {
-        unsigned char end = 2*other.hist.size() - ((other.hist.back() & 240) == 0);
-        for (unsigned char i = ((other.hist.back() & 15) == 0); i < end; i++)
+        unsigned char end = 2*other.hist.size() - (other.hist.back() < 16);
+        for (unsigned char i = (other.hist.back() & 15 == 0); i < end; i++)
             history.histInsert(((other.hist[i/2] >> (4*(i%2))) & 15));
     }
     SO6 tmp = history.reconstruct();

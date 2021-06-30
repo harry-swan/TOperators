@@ -4,6 +4,7 @@ class T_Hist
 
 public:
     T_Hist();
+    T_Hist(unsigned char);
     T_Hist(std::vector<unsigned char> &);
     SO6 reconstruct(); // Gets an SO6 object by multiplying together the right and left hist
     std::vector<Z2> reconstruct_col(char &) const; // Gets an SO6 object by multiplying together the right and left hist
