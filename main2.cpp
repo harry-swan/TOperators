@@ -39,9 +39,11 @@ const Z2 inverse_root2 = Z2::inverse_root2();
 const Z2 one = Z2::one();
 
 //Turn this on if you want to read in saved data
+//Make sure you have the txt files for what genFrom is set to if true
 const bool tIO = false;
 
 //Turn this on if you want to suppress saves
+//Why did I make this exist??? I guess for debugging
 const bool noSave = false;
 
 //If tIO true, choose which tCount to begin generating from:
@@ -67,8 +69,7 @@ const unsigned int saveInterval = numThreads*50000;
  */
 const SO6 tMatrix(unsigned char i, unsigned char j, char matNum) { return SO6::tMatrix(i, j, matNum); }
 
-// File reading is no functional at the moment, it would need to be made to work with the T_Hist changes
-// It also reads in only one hist per character
+// File reading from a partially completed T list
 set<T_Hist> fileRead(unsigned char tc)
 {
     ifstream tfile;
@@ -82,22 +83,16 @@ set<T_Hist> fileRead(unsigned char tc)
     char hist;
     unsigned long long i = 0;
     vector<unsigned char> tmp;
-    SO6 m;
+    //T_Hist m;
     while (tfile.get(hist))
     {
         //Convert hex character to integer
         tmp.push_back((hist >= 'a') ? (hist - 'a' + 10) : (hist - '0'));
         if (++i % tc == 0)
         {
-            //Commented out error inducing lines
-            //m = tsv.at(tmp.at(tmp.size() - 1));
-            for (unsigned char k = tmp.size() - 1; k > -1; k--)
-            {
-                //m = tbase.at(tmp.at(k)) * m;
-            }
-            //tset.insert(m);
+            tset.insert(T_Hist(tmp));
             tmp.clear();
-            tfile.get(hist);
+            //tfile.get(hist);
         }
     }
     return tset;
@@ -181,20 +176,19 @@ int main()
     ifstream tfile;
     unsigned char start = 0;
 
-    // fileRead() does not work at present
-    /* if (tIO && genFrom > 2)
-    {
-        prior = fileRead(genFrom - 2, tsv);
-        current = fileRead(genFrom - 1, tsv);
-        start = genFrom - 1;
-    } */
-
     // Initialize the head of the SO6 tree
     T_Hist::initHead();
     // Generate the lookup table
     std::cout << "\nBeginning Table Generation with Depth " << (+tCount + 1) / 2 << "\n";
 
     T_Hist::tableInsert(T_Hist::head, NULL, (unsigned char)((+tCount + 1) / 2));
+
+    if (tIO && genFrom > 2)
+    {
+        prior = fileRead(genFrom - 2);
+        current = fileRead(genFrom - 1);
+        start = genFrom - 1;
+    }
 
     // /* Here's a thing I'm toying with
     // *  >>>>>>>>>>>>>>>>>>>>>>>>
@@ -243,8 +237,6 @@ int main()
     // if(test) std::cout << "Successful.\n";
     // else {std::cout << "Failed.\n";}
      
-     
-    //timing
     // Get every T operator
     for (unsigned char i = start; i < tCount; i++)
     {
@@ -254,7 +246,7 @@ int main()
 
         // Main loop here
         unsigned long long save = 0;
-        tfile.open(("data/T" + to_string(i + 1) + "sav").c_str());
+        tfile.open(("data/T" + to_string(i + 1) + ".sav").c_str());
         if (!tIO || !tfile)
         {
             remove(("data/T" + to_string(i + 1) + ".txt").c_str());
@@ -266,7 +258,7 @@ int main()
             getline(tfile, str);
             stringstream s(str);
             getline(s, str, ' ');
-            unsigned char save = stoi(str);
+            save = stoi(str);
         }
         tfile.close();
 
