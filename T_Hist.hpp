@@ -15,6 +15,7 @@ public:
     bool operator<(const T_Hist &) const;
     friend std::ostream &operator<<(std::ostream &, const T_Hist &);
 
+    void set_lex_perm() ;
     std::vector<unsigned char> getHistory() { return hist; };
     void histInsert(unsigned char, unsigned char); // Currently unused
 

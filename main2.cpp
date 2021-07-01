@@ -30,11 +30,11 @@
 
 using namespace std;
 
-const unsigned char numThreads = 6;
+const unsigned char numThreads = 32;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 5;
+const unsigned char tCount = 9;
 const Z2 inverse_root2 = Z2::inverse_root2();
 const Z2 one = Z2::one();
 

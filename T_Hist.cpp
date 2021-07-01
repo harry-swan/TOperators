@@ -27,16 +27,14 @@ T_Hist *T_Hist::curr_history = NULL;
 
 T_Hist::T_Hist()
 {
-    hist.clear();
-    // SO6 tmp = reconstruct();
+    hist = {0};                         // Initialize to identity
     perm = {6,5,4,3,2,1};               // Identity would get reversed in order
 }
 
 T_Hist::T_Hist(unsigned char s)
 {
     hist.resize(s, 0);
-    // SO6 tmp = reconstruct();
-    perm = {6,5,4,3,2,1};               // Identity would get reversed in order
+    perm = {6,5,4,3,2,1};               // I assume here we're making a history of size s all initialized to the identity. 
 }
 
 T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
@@ -46,8 +44,10 @@ T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
     unsigned char i = 0;
     for (unsigned char h : new_hist)
         histInsert(h, i++);
-    SO6 tmp = reconstruct();
-    perm = SO6::lexicographic_permutation(tmp);
+
+    // I don't know if we do this any longer or, if we do, if it even matters
+    // SO6 tmp = reconstruct();
+    // perm = SO6::lexicographic_permutation(tmp);
 }
 
 void T_Hist::initHead()
@@ -110,8 +110,6 @@ SO6* T_Hist::tableLookup(std::vector<unsigned char> &index)
  */
 SO6 T_Hist::reconstruct()
 {
-    if(hist.size()==0) return SO6::identity();                  // This is needed, but I don't know why. -Michael
-    // @Michael it is because you call reconstruct() in the default constructor T_Hist(). -Swan
     unsigned char splitMiddleBit = (hist.size() % 2) && ((hist.back() & 240) != 0);
     std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2 + splitMiddleBit);
     std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
@@ -124,9 +122,7 @@ SO6 T_Hist::reconstruct()
 }
 
 std::vector<Z2> T_Hist::reconstruct_col(char & col) const{
-    if(hist.size()==0) return {Z2(), Z2(), Z2(), Z2(), Z2(), Z2()};                  // This is needed, but I don't know why.
-    // The math says we only need to split if we have 2+4k hist values stored for some integer k
-    unsigned char splitMiddleBit = (hist.size() % 2) && ((hist.back() & 240) != 0);
+    bool splitMiddleBit = (hist.size() % 2) && ((hist.back() & 240) != 0);
     std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2 + splitMiddleBit);
     std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
     if(splitMiddleBit)
@@ -146,36 +142,47 @@ void T_Hist::histInsert(unsigned char h, unsigned char i)
 }
 
 // Concatenates the history vectors into one T_Hist object
+
 T_Hist T_Hist::operator*(T_Hist &other)
 {
-    unsigned char extra = 0;
-    if (hist.size() && other.hist.size())
-        extra = hist.back() < 16 && other.hist.back() < 16;
+    // The following lines are commented out since, at this point, no hist.size() should ever be 0. This may simplify some of the logic below and reduce operations elsewhere
+
+    // unsigned char extra = 0;
+    // if (hist.size() && other.hist.size())
+    //     extra = hist.back() < 16 && other.hist.back() < 16;
+    
+    unsigned char extra = hist.back() < 16 && other.hist.back() < 16;           
+
     unsigned char idx = 0;
     T_Hist history(hist.size() + other.hist.size() - extra);
-    if (hist.size())
-    {
-        unsigned char end = 2*hist.size() - (hist.back() < 16);
-        for (unsigned char i = (hist.back() & 15 == 0); i < end; i++)
-            history.histInsert(((hist[i/2] >> (4*(i%2))) & 15), idx++);
-    }
-    if (other.hist.size())
-    {
-        unsigned char end = 2*other.hist.size() - (other.hist.back() < 16);
-        for (unsigned char i = (other.hist.back() & 15 == 0); i < end; i++)
-            history.histInsert(((other.hist[i/2] >> (4*(i%2))) & 15), idx++);
-    }
-    SO6 tmp = history.reconstruct();
-    history.perm = SO6::lexicographic_permutation(tmp);
+
+    // if (hist.size())
+    // {
+    unsigned char end = 2*hist.size() - (hist.back() < 16);
+    for (unsigned char i = (hist.back() & 15 == 0); i < end; i++)
+        history.histInsert(((hist[i/2] >> (4*(i%2))) & 15), idx++);
+    // }
+    // if (other.hist.size())
+    // {
+    end = 2*other.hist.size() - (other.hist.back() < 16);
+    for (unsigned char i = (other.hist.back() & 15 == 0); i < end; i++)
+        history.histInsert(((other.hist[i/2] >> (4*(i%2))) & 15), idx++);
+    // }
+    history.set_lex_perm();
     return history;
+}
+
+void T_Hist::set_lex_perm() {
+    SO6 tmp = reconstruct();
+    perm = SO6::lexicographic_permutation(tmp);
 }
 
 // Compares the SO6 objects corresponding to *this and other using the lexicographic ordering
 bool T_Hist::operator<(const T_Hist &other) const
 {
-    bool s0,s1;                           // These booleans flag the signs from the permutation list
-    char i0, i1;                             // Some integers the columns of interest as flagged by the permutation list
-    std::vector<Z2> col0(6), col1(6);
+    bool s0,s1;                                // These booleans flag the signs from the permutation list
+    char i0,i1;                                // Some integers the columns of interest as flagged by the permutation list
+    std::vector<Z2> col0(6), col1(6);           
 
     if(*this == *T_Hist::curr_history || &other == T_Hist::curr_history) {
         s0 = false;
@@ -188,13 +195,13 @@ bool T_Hist::operator<(const T_Hist &other) const
                 s1 = other.perm[lex_index]<0;
                 i1 = abs(other.perm[lex_index])-1;
                 col1 = other.reconstruct_col(i1);
-                int8_t ret = SO6::lexComp(col0,col1,s0,s1); // For whatever reason using lexLess here gives issues. 
+                int8_t ret = SO6::lexComp(col0,col1,s0,s1);                             // For whatever reason using lexLess here gives issues. 
                 if(ret != 0) return ret < 0;
             } else {
                 s1 = perm[lex_index]<0;
                 i1 = abs(perm[lex_index])-1;
                 col1 = reconstruct_col(i1);
-                int8_t ret = SO6::lexComp(col0,col1,s0,s1); // For whatever reason using lexLess here gives issues. 
+                int8_t ret = SO6::lexComp(col0,col1,s0,s1);                             // For whatever reason using lexLess here gives issues. 
                 if(ret != 0) return ret > 0;
             }
         }
