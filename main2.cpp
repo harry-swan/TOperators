@@ -18,6 +18,7 @@
 #include <fstream>
 #include <chrono>
 #include <set>
+#include <list>
 #include <string>
 #include <sstream>
 #include <functional>
@@ -97,7 +98,7 @@ set<T_Hist> fileRead(unsigned char tc)
 }
 
 // This appends set append to the T file
-void writeResults(unsigned char i, unsigned long long save, set<T_Hist> &append)
+void writeResults(unsigned char i, unsigned long long save, list<T_Hist> &append)
 {
     if(noSave) return;
     auto start = chrono::high_resolution_clock::now();
@@ -170,7 +171,7 @@ int main()
     set<T_Hist> prior({});
     set<T_Hist> current({T_Hist()});
     set<T_Hist> next({});
-    set<T_Hist> append({});
+    list<T_Hist> append({});
     ifstream tfile;
     unsigned char start = 0;
 
@@ -288,7 +289,7 @@ int main()
                     if (next.insert(*itr).second)
                     {
                         // This is only called if the insert into next succeeded
-                        append.insert(*itr);
+                        append.push_back(*itr);
                     }
                     itr++;
                 }
