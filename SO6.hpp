@@ -1,4 +1,3 @@
-
 class SO6
 {
 public:
@@ -140,9 +139,10 @@ public:
         return 0;
     }
 
-    static int8_t lexComp(Z2 *first, Z2 *second, bool &signA, bool &signB)
+    static char lexComp(Z2 *first, Z2 *second, bool &signA, bool &signB)
     {
-        for (unsigned char i = 0; i < 6; i++)
+        for (unsigned char i = 5; i > -1; i--)
+        // for (unsigned char i = 0; i < 6; i++)
         {
             Z2 f = first[i];
             Z2 s = second[i];
@@ -154,7 +154,9 @@ public:
         return 0;
     }
 
-    static int8_t lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool &signA, bool &signB)
+    // static unsigned long long calls[6];
+
+    static char lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool &signA, bool &signB)
     {
         for (unsigned char i = 0; i < 6; i++)
         {
@@ -162,9 +164,16 @@ public:
             Z2 s = second[i];
             if(signA) f.negate();
             if(signB) s.negate();
-            if (f < s) return 1;
-            if (f > s) return -1;
+            if (f < s) {
+                // calls[i]++;
+                return 1;
+            }
+            if (f > s) {
+                // calls[i]++;
+                return -1;
+            }
         }
+        // calls[5]++;
         return 0;
     }
 
@@ -222,6 +231,28 @@ public:
         return ret;
     }
 
+    static std::vector<Z2> multiply_only_row(SO6& first, SO6& second, char & row) {
+        std::vector<Z2> ret(6);
+        Z2 next;
+        for(int col = 0; col < 6; col++) {
+                for (char k = 0; k < 6; k++) {
+                    next = first[k][row] * second[col][k];
+                    ret[col] += next; 
+                }
+        }
+        return ret;
+    }
+
+    static Z2 multiply_only_element(SO6& first, SO6& second, char & row, char & col) {
+        Z2 ret, next;
+        for (char k = 0; k < 6; k++) {
+            next = first[k][row] * second[col][k];
+            ret += next; 
+        }
+        return ret;
+    }
+
+
     static void print_mat(SO6 & mat) {
         for (int row = 0; row < 6; row++) {
             for (int col = 0; col < 6; col++) {
@@ -245,7 +276,7 @@ public:
     //     return ret;
     // }
 
-// private:
+private:
     Z2 arr[6][6];
     // std::vector<char> hist;
     // std::string name;

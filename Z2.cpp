@@ -282,3 +282,15 @@ std::ostream &operator<<(std::ostream &os, const Z2 &z)
         os << std::hex << +i;
     }
 }
+
+void Z2::print_me() {
+    std::cout << "(";
+    for (int i=0; i <3; i++) 
+    {
+        if(i == 2) {
+            std::cout << static_cast<int>(val[i]) << ")\n";
+            return;
+        }
+        std::cout << static_cast<int>(val[i]) << ",";
+    }
+}

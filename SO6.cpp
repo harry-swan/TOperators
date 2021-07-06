@@ -4,6 +4,7 @@
 #include <array>
 #include <sstream>
 #include <bitset>
+#include <set>
 #include <iterator>
 #include <stdint.h>
 #include "Z2.hpp"
@@ -25,6 +26,7 @@
 //     return 0;
 // }
 
+// unsigned long long SO6::calls[6] = {0,0,0,0,0,0};
 
 /**
  * Method to compare two Z2 arrays of length 6 lexicographically
@@ -288,3 +290,24 @@ SO6 SO6::residue()
     }
     return res;
 }
+
+// char lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool &signA, bool &signB)
+//     {
+//         for (unsigned char i = 0; i < 6; i++)
+//         {
+//             Z2 f = first[i];
+//             Z2 s = second[i];
+//             if(signA) f.negate();
+//             if(signB) s.negate();
+//             if (f < s) {
+//                 SO6::calls.insert(i);
+//                 return 1;
+//             }
+//             if (f > s) {
+//                 SO6::calls.insert(i);
+//                 return -1;
+//             }
+//         }
+//         SO6::calls.insert(5);
+//         return 0;
+//     }

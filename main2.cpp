@@ -30,13 +30,11 @@
 
 using namespace std;
 
-const unsigned char numThreads = 32;
+const unsigned char numThreads = 60;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 9;
-const Z2 inverse_root2 = Z2::inverse_root2();
-const Z2 one = Z2::one();
+const unsigned char tCount = 8;
 
 //Turn this on if you want to read in saved data
 const bool tIO = false;
@@ -49,7 +47,7 @@ const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-const unsigned int saveInterval = numThreads*50000;
+const unsigned int saveInterval = numThreads*5000;
 
 // SO6 identity()
 // {
@@ -195,57 +193,13 @@ int main()
     std::cout << "\nBeginning Table Generation with Depth " << (+tCount + 1) / 2 << "\n";
 
     T_Hist::tableInsert(T_Hist::head, NULL, (unsigned char)((+tCount + 1) / 2));
-
-    // /* Here's a thing I'm toying with
-    // *  >>>>>>>>>>>>>>>>>>>>>>>>
-    // *  >>>>>>>>>>>>>>>>>>>>>>>>
-    // *  >>>>>>>>>>>>>>>>>>>>>>>>
-    // */ 
-
-    // std::cout << "Starting Test 1:\n";
-    // bool test = true;
-    // for(int tttt = 0; tttt < 100000; tttt++) {
-    //     std::vector<unsigned char> vec; 
-    //     for(int m = 0; m < 5; m++) {
-    //         unsigned char res = 1 + (rand() %15);
-    //         vec.push_back(res);
-    //     }
-    //     T_Hist tmp = T_Hist(vec);
-    //     SO6 first = tmp.reconstruct();
-    //     SO6 second = first;
-    //     second.reduced_rep();
-    //     std::vector<int8_t> perm = SO6::lexicographic_permutation(first);
-        
-    //     for(int row = 0; row<6; row++) {
-    //         for(int col = 0; col <6; col ++) {
-    //             int c = perm[col];
-    //             if(c < 0) {test = -first[-c-1][row]==second[col][row];}
-    //             else {test = first[c-1][row]==second[col][row];}
-    //             if(!test) break;
-    //         }
-    //         if(!test) break;
-    //     }
-    //     if(!test) break;
-
-    //     for(int row = 0; row<6; row++) {
-    //             for(int col = 0; col <6; col ++) {
-    //                 int c = perm[col];
-    //                 bool sign = c <0;
-    //                 test = !(SO6::lexLess(first[abs(c)-1],second[col],sign,0) || SO6::lexLess(second[col],first[abs(c)-1],0,sign)) ;
-    //                 if(!test) break;
-    //             }
-    //             if(!test) break;
-    //     }    
-    //     if(!test) break;
-    // }
-
-    
-    // if(test) std::cout << "Successful.\n";
-    // else {std::cout << "Failed.\n";}
      
      
     //timing
     // Get every T operator
+
+    long long timer[tCount];
+
     for (unsigned char i = start; i < tCount; i++)
     {
         std::cout << "\nBeginning T-Count " << (i + 1) << "\n";
@@ -291,6 +245,7 @@ int main()
                     SO6 tmp2 = T_Hist::curr_history->reconstruct();
                     tmp2.reduced_rep();
                     T_Hist::curr = &tmp2;
+                    // next.insert(*itr);
                     if (next.insert(*itr).second)
                     {
                         // This is only called if the insert into next succeeded
@@ -301,7 +256,7 @@ int main()
                 threadVectors[i].clear();
             }
             save += saveInterval;
-            writeResults(i, save, append);
+            // writeResults(i, save, append);
             append.clear();
         }
 
@@ -310,6 +265,7 @@ int main()
         // Begin reporting
         auto ret = chrono::duration_cast<chrono::milliseconds>(end - start).count();
         std::cout << ">>>Found " << next.size() << " new matrices in " << ret << "ms\n";
+        timer[i] = ret;
         prior.clear();
         prior.swap(current); // T++
         current.swap(next);  // T++
@@ -317,6 +273,11 @@ int main()
     // Free all table memory
     T_Hist::tableDelete(T_Hist::head, NULL);
     chrono::duration<double> timeelapsed = chrono::high_resolution_clock::now() - tbefore;
-    std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n";
+    std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n\n\n";
+    std::cout << "{";
+    for(int i = start; i < tCount-1; i++) {
+        std::cout << timer[i] << ",";
+    }
+    std::cout << timer[tCount-1] << "}\n";
     return 0;
 }

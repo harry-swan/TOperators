@@ -121,18 +121,13 @@ SO6 T_Hist::reconstruct()
     return *tableLookup(left) * *tableLookup(right);
 }
 
-std::vector<Z2> T_Hist::reconstruct_col(char & col) const{
-    bool splitMiddleBit = (hist.size() % 2) && ((hist.back() & 240) != 0);
-    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2 + splitMiddleBit);
-    std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
-    if(splitMiddleBit)
-    {
-        left.back() = left.back() & 15;
-        right[0] = right[0] & 240;
-    }
-    SO6* first = tableLookup(left);
-    SO6* second = tableLookup(right);
-    std::vector<Z2> ret = SO6::multiply_only_column(*first,*second,col);
+std::vector<Z2> T_Hist::reconstruct_col(std::pair<SO6*, SO6*> &factors,char & col) const{
+    std::vector<Z2> ret = SO6::multiply_only_column(*factors.first,*factors.second,col);
+    return ret;
+}
+
+Z2 T_Hist::reconstruct_element(std::pair<SO6*, SO6*> &factors, char & row, char & col) const{
+    Z2 ret = SO6::multiply_only_element(*factors.first,*factors.second,row,col);
     return ret;
 }
 
@@ -177,52 +172,78 @@ void T_Hist::set_lex_perm() {
     perm = SO6::lexicographic_permutation(tmp);
 }
 
+const std::pair<SO6*,SO6*> T_Hist::get_factors() const{
+    bool splitMiddleBit = (hist.size() % 2) && ((hist.back() & 240) != 0);
+    std::vector<unsigned char> left(hist.begin(), hist.begin() + hist.size() / 2 + splitMiddleBit);
+    std::vector<unsigned char> right(hist.begin() + hist.size() / 2, hist.end());
+    if(splitMiddleBit)
+    {
+        left.back() = left.back() & 15;
+        right[0] = right[0] & 240;
+    }
+    return {tableLookup(left),tableLookup(right)};
+}
+
 // Compares the SO6 objects corresponding to *this and other using the lexicographic ordering
 bool T_Hist::operator<(const T_Hist &other) const
 {
-    bool s0,s1;                                // These booleans flag the signs from the permutation list
-    char i0,i1;                                // Some integers the columns of interest as flagged by the permutation list
-    std::vector<Z2> col0(6), col1(6);           
+    bool s0;                                // These booleans flag the signs from the permutation list
+    char i0;                                // Some integers the columns of interest as flagged by the permutation list
+    Z2 el0; 
+    std::pair<SO6*,SO6*> these; 
 
-    if(*this == *T_Hist::curr_history || &other == T_Hist::curr_history) {
-        s0 = false;
+    if(*this == *T_Hist::curr_history) {
+        these = other.get_factors();
         SO6 &first = *T_Hist::curr;
-        for(int lex_index = 0; lex_index<6; lex_index++) {
-            
-            for(int row = 0; row < 6; row++) col0[row]=first[lex_index][row];           // May be possible to make faster by doing away with this constructor and passing the array to lexComp below somehow
-
-            if(*this == *T_Hist::curr_history) {
-                s1 = other.perm[lex_index]<0;
-                i1 = abs(other.perm[lex_index])-1;
-                col1 = other.reconstruct_col(i1);
-                int8_t ret = SO6::lexComp(col0,col1,s0,s1);                             // For whatever reason using lexLess here gives issues. 
-                if(ret != 0) return ret < 0;
-            } else {
-                s1 = perm[lex_index]<0;
-                i1 = abs(perm[lex_index])-1;
-                col1 = reconstruct_col(i1);
-                int8_t ret = SO6::lexComp(col0,col1,s0,s1);                             // For whatever reason using lexLess here gives issues. 
-                if(ret != 0) return ret > 0;
+        for(int lex_index = 5; lex_index>-1; lex_index--) {
+            s0 = other.perm[lex_index]<0;
+            i0 = abs(other.perm[lex_index])-1;
+            for(char row = 5; row > -1; row --) {
+                el0 = other.reconstruct_element(these,row,i0);
+                if(s0) el0.negate();
+                if(!(first[lex_index][row] == el0)) return first[lex_index][row] < el0;
             }
         }
-        return false;
     } 
+    else if(&other == T_Hist::curr_history) {
+        these = get_factors();
+        SO6 &second = *T_Hist::curr;
+        for(int lex_index = 5; lex_index>-1; lex_index--) {
+            s0 = perm[lex_index]<0;
+            i0 = abs(perm[lex_index])-1;
+            for(char row = 5; row > -1; row --) {
+                el0 = other.reconstruct_element(these,row,i0);
+                if(s0) el0.negate();
+                if(!(el0 == second[lex_index][row])) return el0 < second[lex_index][row];
+            }
+        }
+    } 
+    
+    bool s1;
+    char i1;
+    Z2 el1;
+    these = get_factors();
+    std::pair<SO6*,SO6*> those = other.get_factors(); 
 
-    // If we make it this far, we have to rebuild both matrices. Not sure when/why this happens. Probably called somewhere in the set insert.
-    for(int lex_index = 0; lex_index<6 ; lex_index++) {
+    for(char lex_index = 5; lex_index>-1 ; lex_index--) {
         s0 = perm[lex_index]<0;
         i0 = abs(perm[lex_index])-1;
-        col0 = reconstruct_col(i0);    
-
         s1 = other.perm[lex_index]<0;
         i1 = abs(other.perm[lex_index])-1;
-        col1 = other.reconstruct_col(i1);             
 
-        int8_t tmp = SO6::lexComp(col0,col1,s0,s1); // For whatever reason using lexLess here gives issues. 
-        if(tmp != 0) return tmp < 0;
+        for(char row = 5; row > -1; row --) {
+            el0 = reconstruct_element(these,row,i0);     
+            if(s0) el0.negate();
+            
+            el1 = other.reconstruct_element(those,row,i1);
+            if(s1) el1.negate();
+            if(!(el0 == el1)) return el0 < el1;
+        }
     } 
+
     return false;
 }
+
 
 // Prints every element of the history vector for T_Hist h
 std::ostream &operator<<(std::ostream &os, const T_Hist &h)

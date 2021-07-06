@@ -39,6 +39,7 @@ public:
     Z2 &operator=(const char &);                               //function that makes the operator have equal entries to parameter
     Z2 &operator=(const Z2 &);                                   //function that makes the operator have equal entries to parameter
     Z2 &reduce();                                                //auxiliary function to make sure every triad is in a consistent most reduced form
+    void print_me();
     char *scale(const char &);                               //auxiliary function to make sure that when addition is performed the exponents in the denominators are equal
     Z2 abs();                                                    //Returns the absolute value
     friend std::ostream &operator<<(std::ostream &, const Z2 &); //display
