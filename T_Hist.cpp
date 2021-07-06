@@ -45,9 +45,10 @@ T_Hist::T_Hist(std::vector<unsigned char> &new_hist)
     for (unsigned char h : new_hist)
         histInsert(h, i++);
 
-    // I don't know if we do this any longer or, if we do, if it even matters
-    // SO6 tmp = reconstruct();
-    // perm = SO6::lexicographic_permutation(tmp);
+    // I don't know if we do this any longer or, if we do, if it even matters. -Michael
+    // We do need this, but only for fileRead(). -Swan
+    SO6 tmp = reconstruct();
+    perm = SO6::lexicographic_permutation(tmp);
 }
 
 void T_Hist::initHead()
