@@ -49,7 +49,7 @@ const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-const unsigned int saveInterval = numThreads*5000;
+const unsigned int saveInterval = __UINT64_MAX__;
 
 // SO6 identity()
 // {
@@ -295,7 +295,7 @@ int main()
                 threadVectors[i].clear();
             }
             save += saveInterval;
-            // writeResults(i, save, append);
+            writeResults(i, save, append);
             append.clear();
         }
 
