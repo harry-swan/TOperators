@@ -281,6 +281,7 @@ std::ostream &operator<<(std::ostream &os, const Z2 &z)
     {
         os << std::hex << +i;
     }
+    return os;
 }
 
 void Z2::print_me() {
