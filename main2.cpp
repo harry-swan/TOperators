@@ -17,6 +17,7 @@
 #include <future>
 #include <fstream>
 #include <chrono>
+#include <cmath>
 #include <set>
 #include <list>
 #include <string>
@@ -31,11 +32,15 @@
 
 using namespace std;
 
-const unsigned char numThreads = 60;
+const unsigned char numThreads = 4;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
 const unsigned char tCount = 8;
+
+// For this and above, brute force results into a vector
+// Has no effect if setless > tCount
+const unsigned char setless = 7;
 
 //Turn this on if you want to read in saved data
 //Make sure you have the txt files for what genFrom is set to if true
@@ -50,7 +55,7 @@ const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-const unsigned int saveInterval = __UINT64_MAX__;
+unsigned long long saveInterval = 50000 * numThreads;
 
 // SO6 identity()
 // {
@@ -98,22 +103,35 @@ set<T_Hist> fileRead(unsigned char tc)
 }
 
 // This appends set append to the T file
-void writeResults(unsigned char i, unsigned long long save, list<T_Hist> &append)
+void writeResults(unsigned char i, unsigned char j, unsigned long long save, list<T_Hist> &append)
 {
-    if(noSave) return;
+    if (noSave)
+        return;
     auto start = chrono::high_resolution_clock::now();
-    string fileName = "data/T" + to_string(i + 1) + ".sav";
+    string name = to_string(1+i);
+    if (j)
+    {
+        name = name + 's' + to_string(j);
+    }
+    string fileName = "data/T" + name + ".sav";
     fstream write = fstream(fileName, std::ios_base::out);
     write << save;
     write.close();
-    fileName = "data/T" + to_string(i + 1) + ".txt";
-    write = fstream(fileName, std::ios_base::app);
+    fileName = "data/T" + name + ".txt";
+    if (j == 0)
+    {
+        write = fstream(fileName, std::ios_base::app);
+    }
+    else
+    {
+        write = fstream(fileName, std::ios_base::out);
+    }
     for (T_Hist n : append)
         write << n;
     write.close();
     auto end = chrono::high_resolution_clock::now();
     auto ret = chrono::duration_cast<chrono::milliseconds>(end - start).count();
-    cout << ">>>Wrote T-Count " << (i + 1) << " to 'data/T" << (i + 1) << ".txt' in " << ret << "ms\n";
+    cout << ">>>Wrote T-Count " << (i + 1) << " to 'data/T" << name << ".txt' in " << ret << "ms\n";
 }
 
 void threadMult(vector<T_Hist> &threadVector, const unsigned char threadNum, const unsigned long long threadContinue,
@@ -156,6 +174,43 @@ void threadMult(vector<T_Hist> &threadVector, const unsigned char threadNum, con
     }
 }
 
+void threadMultSetless(vector<T_Hist> &threadVector, const unsigned char threadNum, const unsigned long long threadContinue,
+                       vector<T_Hist> &currentvec)
+{
+    // Setting up thread iteration, thread multiplies everything in range (titr, citr) to (tend, cend)
+    // by all 15 base T Operators
+    unsigned long long start = threadContinue + threadNum * operationsPerThread + min(threadNum, rem);
+    if (start >= currentvec.size() * 15)
+        return;
+    unsigned long long end = min(start + operationsPerThread + (threadNum < rem), (unsigned long long)currentvec.size() * 15);
+    vector<T_Hist>::iterator citr = currentvec.begin();
+    vector<T_Hist>::iterator cend = currentvec.begin();
+    // Add 1 because we don't care about multiplication by identity tsv[0]
+    unsigned char t = 1 + start / currentvec.size();
+    advance(citr, start % currentvec.size());
+    unsigned char tend = 1 + end / currentvec.size();
+    advance(cend, end % currentvec.size());
+
+    T_Hist m, curr;
+    while (t < 16)
+    {
+        while (citr != currentvec.end())
+        {
+            if (t == tend && citr == cend)
+                break;
+            curr = *citr;
+            vector<unsigned char> vec = {t};
+            m = T_Hist(vec) * curr;
+            threadVector.push_back(m);
+            citr++;
+        }
+        if (t == tend)
+            break;
+        t++;
+        citr = currentvec.begin();
+    }
+}
+
 int main()
 {
     auto tbefore = chrono::high_resolution_clock::now();
@@ -171,6 +226,7 @@ int main()
     set<T_Hist> prior({});
     set<T_Hist> current({T_Hist()});
     set<T_Hist> next({});
+    unsigned long long nSize = 0;
     list<T_Hist> append({});
     ifstream tfile;
     unsigned char start = 0;
@@ -193,12 +249,12 @@ int main()
     // *  >>>>>>>>>>>>>>>>>>>>>>>>
     // *  >>>>>>>>>>>>>>>>>>>>>>>>
     // *  >>>>>>>>>>>>>>>>>>>>>>>>
-    // */ 
+    // */
 
     // std::cout << "Starting Test 1:\n";
     // bool test = true;
     // for(int tttt = 0; tttt < 100000; tttt++) {
-    //     std::vector<unsigned char> vec; 
+    //     std::vector<unsigned char> vec;
     //     for(int m = 0; m < 5; m++) {
     //         unsigned char res = 1 + (rand() %15);
     //         vec.push_back(res);
@@ -208,7 +264,7 @@ int main()
     //     SO6 second = first;
     //     second.reduced_rep();
     //     std::vector<int8_t> perm = SO6::lexicographic_permutation(first);
-        
+
     //     for(int row = 0; row<6; row++) {
     //         for(int col = 0; col <6; col ++) {
     //             int c = perm[col];
@@ -228,19 +284,19 @@ int main()
     //                 if(!test) break;
     //             }
     //             if(!test) break;
-    //     }    
+    //     }
     //     if(!test) break;
     // }
 
-    
     // if(test) std::cout << "Successful.\n";
     // else {std::cout << "Failed.\n";}
-     
+
     // Get every T operator
 
     long long timer[tCount];
 
-    for (unsigned char i = start; i < tCount; i++)
+    unsigned char i;
+    for (i = start; i < tCount && i < (setless - 1); i++)
     {
         std::cout << "\nBeginning T-Count " << (i + 1) << "\n";
 
@@ -296,7 +352,7 @@ int main()
                 threadVectors[i].clear();
             }
             save += saveInterval;
-            writeResults(i, save, append);
+            writeResults(i, 0, save, append);
             append.clear();
         }
 
@@ -304,20 +360,102 @@ int main()
         auto end = chrono::high_resolution_clock::now();
         // Begin reporting
         auto ret = chrono::duration_cast<chrono::milliseconds>(end - start).count();
-        std::cout << ">>>Found " << next.size() << " new matrices in " << ret << "ms\n";
+        nSize = next.size();
+        std::cout << ">>>Found " << nSize << " new matrices in " << ret << "ms\n";
         timer[i] = ret;
         prior.clear();
         prior.swap(current); // T++
         current.swap(next);  // T++
     }
+
+    vector<T_Hist> currentvec(current.size());
+    vector<T_Hist> nextvec();
+    if (i < tCount)
+    {
+        copy(current.begin(), current.end(), currentvec.begin());
+        saveInterval = nSize;
+        operationsPerThread = saveInterval / numThreads;
+        rem = saveInterval % numThreads;
+    }
+    current.clear();
+    prior.clear();
+
+    while (i < tCount)
+    {
+        unsigned int sCount = pow(15, 2 + i - setless);
+        std::cout << "\nBeginning T-Count " << (i + 1) << "\n";
+        auto start = chrono::high_resolution_clock::now();
+
+        for (unsigned int j = 0; j < sCount; j++)
+        {
+            if (j % 15 == 0 && i > tCount)
+            {
+                ifstream tfile;
+                tfile.open(("data/T" + to_string(i + 1) + 's' + to_string(1 + (j/15)) + ".txt").c_str());
+                if (!tfile)
+                {
+                    cout << "File does not exist.\n";
+                    exit(1);
+                }
+                currentvec.clear();
+                char hist;
+                unsigned long long k = 0;
+                vector<unsigned char> tmp;
+                //T_Hist m;
+                while (tfile.get(hist))
+                {
+                    //Convert hex character to integer
+                    tmp.push_back((hist >= 'a') ? (hist - 'a' + 10) : (hist - '0'));
+                    if (++k % i == 0)
+                    {
+                        currentvec.push_back(T_Hist(tmp));
+                        tmp.clear();
+                    }
+                }
+            }
+            vector<thread> threads = {};
+            for (unsigned char i = 0; i < numThreads; i++)
+            {
+                threads.emplace_back(thread(threadMultSetless, ref(threadVectors[i]), i, 0, ref(currentvec)));
+            }
+            // Do matrix multiplication in threads
+            for (unsigned char i = 0; i < numThreads; i++)
+            {
+                threads[i].join();
+                vector<T_Hist>::iterator itr = threadVectors[i].begin();
+                vector<T_Hist>::iterator end = threadVectors[i].end();
+                while (itr != end)
+                {
+                    T_Hist &tmp = *itr;
+                    T_Hist::curr_history = &tmp;
+                    append.push_back(*itr);
+                    itr++;
+                }
+                threadVectors[i].clear();
+            }
+            writeResults(i, j + 1, 0, append);
+            append.clear();
+        }
+
+        // End main loop
+        auto end = chrono::high_resolution_clock::now();
+        // Begin reporting
+        auto ret = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+        nSize *= 15;
+        std::cout << ">>>Found " << nSize << " new matrices in " << ret << "ms\n";
+        timer[i] = ret;
+        i++;
+    }
+
     // Free all table memory
     T_Hist::tableDelete(T_Hist::head, NULL);
     chrono::duration<double> timeelapsed = chrono::high_resolution_clock::now() - tbefore;
     std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n\n\n";
     std::cout << "{";
-    for(int i = start; i < tCount-1; i++) {
+    for (int i = start; i < tCount - 1; i++)
+    {
         std::cout << timer[i] << ",";
     }
-    std::cout << timer[tCount-1] << "}\n";
+    std::cout << timer[tCount - 1] << "}\n";
     return 0;
 }
