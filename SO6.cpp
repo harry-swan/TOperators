@@ -251,14 +251,14 @@ bool SO6::operator==(const SO6 &other) const
  */
 std::ostream &operator<<(std::ostream &os, const SO6 &m)
 {
-    os << "\n";
+    //os << "\n";
     for(int row = 0; row<6; row++){
         os << '[';
         for(int col = 0; col<6; col++)
             os << m[col][row] <<' ';
-        os << "] \n";
+        os << "] ";// \n";
     }
-    os << "\n";
+    //os << "\n";
     return os;
 }
 

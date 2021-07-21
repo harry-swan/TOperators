@@ -36,7 +36,7 @@ const unsigned char numThreads = 4;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 8;
+const unsigned char tCount = 5;
 
 // For this and above, brute force results into a vector
 // Has no effect if setless > tCount
@@ -118,17 +118,22 @@ void writeResults(unsigned char i, unsigned char j, unsigned long long save, lis
     write << save;
     write.close();
     fileName = "data/T" + name + ".txt";
-    if (j == 0)
+    /*if (j == 0)
     {
         write = fstream(fileName, std::ios_base::app);
     }
     else
     {
         write = fstream(fileName, std::ios_base::out);
-    }
+    }*/
     for (T_Hist n : append)
+    {
+        stringstream patternName;
+        patternName << "data/" << n.reconstruct().residue() << ".txt";
+        write = fstream(patternName.str(), std::ios_base::app);
         write << n;
-    write.close();
+        write.close();
+    }
     auto end = chrono::high_resolution_clock::now();
     auto ret = chrono::duration_cast<chrono::milliseconds>(end - start).count();
     cout << ">>>Wrote T-Count " << (i + 1) << " to 'data/T" << name << ".txt' in " << ret << "ms\n";
