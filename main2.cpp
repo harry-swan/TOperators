@@ -7,7 +7,7 @@
  * @author Andrew Glaudell
  * @author Jacob Weston
  * @author Mingzhen Tian
- * @version 6/12/21
+ * @version 7/25/21
  */
 
 #include <algorithm>
@@ -24,6 +24,9 @@
 #include <sstream>
 #include <functional>
 #include <mutex>
+#include <shared_mutex>
+#include <utility>
+#include <map>
 #include <stdint.h>
 #include <stdlib.h>
 #include <omp.h>
@@ -33,15 +36,15 @@
 
 using namespace std;
 
-const unsigned char numThreads = 1;
+const unsigned char numThreads = 4;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 4;
+const unsigned char tCount = 5;
 
 // For this and above, brute force results into a vector
 // Has no effect if setless > tCount
-const unsigned char setless = 7;
+const unsigned char setless = 9;
 
 //Turn this on if you want to read in saved data
 //Make sure you have the txt files for what genFrom is set to if true
@@ -58,7 +61,10 @@ const unsigned char genFrom = tCount;
 //This also determines parallel block sizes
 unsigned long long saveInterval = 50000;
 
-mutex appendLock;
+//A Map of patterns to their lock and file, plus a lock for appending to this map
+map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>> patternMap;
+shared_timed_mutex mapLock;
+
 
 // SO6 identity()
 // {
@@ -77,6 +83,7 @@ mutex appendLock;
 const SO6 tMatrix(unsigned char i, unsigned char j, char matNum) { return SO6::tMatrix(i, j, matNum); }
 
 // File reading from a partially completed T list
+// Defunct now that we are printing patterns
 set<T_Hist> fileRead(unsigned char tc)
 {
     ifstream tfile;
@@ -128,13 +135,32 @@ void writeResults(unsigned char i, unsigned char threadNum, list<T_Hist> &append
     }*/
     while (itr != itrend)
     {
+        
         stringstream patternName;
         patternName << "data/" << itr->reconstruct().pattern() << ".txt";
-        fstream write = fstream(patternName.str(), std::ios_base::app);
-        appendLock.lock();
-        write << *itr << ' ';
-        appendLock.unlock();
-        write.close();
+        string name = patternName.str();
+        mapLock.lock_shared();
+        map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>>::iterator mapItr = patternMap.find(name);
+        bool found = (mapItr != patternMap.end());
+        pair<shared_ptr<mutex>, shared_ptr<fstream>> patternPair = mapItr->second;
+        mapLock.unlock_shared();
+        if(!found)
+        {
+            mapLock.lock();
+            if(patternMap.find(name) == patternMap.end())
+            {
+                shared_ptr<mutex> pairLock(new mutex);
+                shared_ptr<fstream> pairFstream(new fstream(name, std::ios_base::app));
+                patternPair = patternMap.emplace(name, pair<shared_ptr<mutex>, shared_ptr<fstream>>(pairLock, pairFstream)).first->second;
+            }
+            mapLock.unlock();
+        }
+        shared_ptr<mutex> appendLock = patternPair.first;
+        shared_ptr<fstream> write = patternPair.second;
+        T_Hist hist = *itr;
+        appendLock->lock();
+        *write << hist << ' ';
+        appendLock->unlock();
         itr++;
     }
     auto endTime = chrono::high_resolution_clock::now();
@@ -473,6 +499,10 @@ int main()
 
     // Free all table memory
     T_Hist::tableDelete(T_Hist::head, NULL);
+    patternMap.clear();
+    map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>>::iterator itr = patternMap.begin();
+    while(itr != patternMap.end())
+        itr->second.second->close();
     chrono::duration<double> timeelapsed = chrono::high_resolution_clock::now() - tbefore;
     std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n\n\n";
     std::cout << "{";

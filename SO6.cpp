@@ -255,7 +255,7 @@ std::ostream &operator<<(std::ostream &os, const SO6 &m)
     for(int row = 0; row<6; row++){
         os << '[';
         for(int col = 0; col<6; col++)
-            os << m[col][row] << ' ';
+            os << m[col][row] << (col!=5?" ":"");
         os << "] ";// \n";
     }
     //os << "\n";
