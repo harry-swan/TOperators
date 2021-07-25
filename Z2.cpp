@@ -259,16 +259,14 @@ Z2 &Z2::reduce()
     return *this;
 }
 
-Z2 Z2::pattern(int LDE)
+Z2 Z2::residue(int LDE)
 {
     switch (getLDE() - LDE)
     {
     case 0:
-        return Z2(val[0] % 2, val[1] % 2, val[2]);
-        break;
+        return Z2(val[0] % 2, val[1] % 2, LDE);
     case 1:
-        return Z2(0, val[1] % 2, val[2]);
-        break;
+        return Z2(val[1] % 2, 0, LDE);
     default:
         return Z2();
     }

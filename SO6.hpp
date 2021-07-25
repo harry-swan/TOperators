@@ -27,7 +27,7 @@ public:
     char genLDE();                                              // generates LDE, called after multiplication and constructor
     friend std::ostream &operator<<(std::ostream &, const SO6 &); //display
     bool operator==(const SO6 &other) const;
-    SO6 residue(); // returns the residue matrix using Z2::pattern()
+    SO6 pattern(); // returns the residue matrix using Z2::residue()
     /* inline char getLast()
     {
         if (hist.size() != 0)

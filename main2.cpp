@@ -23,6 +23,7 @@
 #include <string>
 #include <sstream>
 #include <functional>
+#include <mutex>
 #include <stdint.h>
 #include <stdlib.h>
 #include <omp.h>
@@ -32,11 +33,11 @@
 
 using namespace std;
 
-const unsigned char numThreads = 4;
+const unsigned char numThreads = 1;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 5;
+const unsigned char tCount = 4;
 
 // For this and above, brute force results into a vector
 // Has no effect if setless > tCount
@@ -55,7 +56,9 @@ const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-unsigned long long saveInterval = 50000 * numThreads;
+unsigned long long saveInterval = 50000;
+
+mutex appendLock;
 
 // SO6 identity()
 // {
@@ -103,21 +106,18 @@ set<T_Hist> fileRead(unsigned char tc)
 }
 
 // This appends set append to the T file
-void writeResults(unsigned char i, unsigned char j, unsigned long long save, list<T_Hist> &append)
+void writeResults(unsigned char i, unsigned char threadNum, list<T_Hist> &append)
 {
     if (noSave)
         return;
-    auto start = chrono::high_resolution_clock::now();
-    string name = to_string(1+i);
-    if (j)
-    {
-        name = name + 's' + to_string(j);
-    }
-    string fileName = "data/T" + name + ".sav";
-    fstream write = fstream(fileName, std::ios_base::out);
-    write << save;
-    write.close();
-    fileName = "data/T" + name + ".txt";
+    unsigned long long start = threadNum * (append.size() / numThreads) + min(threadNum, (unsigned char)(append.size() % numThreads));
+    unsigned long long end = start + (append.size() / numThreads) + (threadNum < (unsigned char)(append.size() % numThreads));
+    list<T_Hist>::iterator itr = append.begin();
+    list<T_Hist>::iterator itrend = append.begin();
+    advance(itr, start);
+    advance(itrend, end);
+    auto startTime = chrono::high_resolution_clock::now();
+    //string fileName = "data/T" + name + ".txt";
     /*if (j == 0)
     {
         write = fstream(fileName, std::ios_base::app);
@@ -126,17 +126,20 @@ void writeResults(unsigned char i, unsigned char j, unsigned long long save, lis
     {
         write = fstream(fileName, std::ios_base::out);
     }*/
-    for (T_Hist n : append)
+    while (itr != itrend)
     {
         stringstream patternName;
-        patternName << "data/" << n.reconstruct().residue() << ".txt";
-        write = fstream(patternName.str(), std::ios_base::app);
-        write << n;
+        patternName << "data/" << itr->reconstruct().pattern() << ".txt";
+        fstream write = fstream(patternName.str(), std::ios_base::app);
+        appendLock.lock();
+        write << *itr << ' ';
+        appendLock.unlock();
         write.close();
+        itr++;
     }
-    auto end = chrono::high_resolution_clock::now();
-    auto ret = chrono::duration_cast<chrono::milliseconds>(end - start).count();
-    cout << ">>>Wrote T-Count " << (i + 1) << " to 'data/T" << name << ".txt' in " << ret << "ms\n";
+    auto endTime = chrono::high_resolution_clock::now();
+    auto ret = chrono::duration_cast<chrono::milliseconds>(endTime - startTime).count();
+    cout << ">>>Wrote " << (end - start) << " T-Count " << (i + 1) << " residue patterns in " << ret << "ms\n";
 }
 
 void threadMult(vector<T_Hist> &threadVector, const unsigned char threadNum, const unsigned long long threadContinue,
@@ -329,16 +332,16 @@ int main()
         while (save < saveEnd)
         {
             vector<thread> threads = {};
-            for (unsigned char i = 0; i < numThreads; i++)
+            for (unsigned char j = 0; j < numThreads; j++)
             {
-                threads.emplace_back(thread(threadMult, ref(threadVectors[i]), i, save, ref(prior), ref(current)));
+                threads.emplace_back(thread(threadMult, ref(threadVectors[j]), j, save, ref(prior), ref(current)));
             }
             // Do matrix multiplication in threads
-            for (unsigned char i = 0; i < numThreads; i++)
+            for (unsigned char j = 0; j < numThreads; j++)
             {
-                threads[i].join();
-                vector<T_Hist>::iterator itr = threadVectors[i].begin();
-                vector<T_Hist>::iterator end = threadVectors[i].end();
+                threads[j].join();
+                vector<T_Hist>::iterator itr = threadVectors[j].begin();
+                vector<T_Hist>::iterator end = threadVectors[j].end();
                 while (itr != end)
                 {
                     T_Hist &tmp = *itr;
@@ -354,10 +357,18 @@ int main()
                     }
                     itr++;
                 }
-                threadVectors[i].clear();
+                threadVectors[j].clear();
             }
             save += saveInterval;
-            writeResults(i, 0, save, append);
+            threads.clear();
+            for (unsigned char j = 0; j < numThreads; j++)
+            {
+                threads.emplace_back(thread(writeResults, i, j, ref(append)));
+            }
+            for (unsigned char j = 0; j < numThreads; j++)
+            {
+                threads[j].join();
+            }
             append.clear();
         }
 
@@ -419,16 +430,16 @@ int main()
                 }
             }
             vector<thread> threads = {};
-            for (unsigned char i = 0; i < numThreads; i++)
+            for (unsigned char j = 0; j < numThreads; j++)
             {
-                threads.emplace_back(thread(threadMultSetless, ref(threadVectors[i]), i, 0, ref(currentvec)));
+                threads.emplace_back(thread(threadMultSetless, ref(threadVectors[j]), j, 0, ref(currentvec)));
             }
             // Do matrix multiplication in threads
-            for (unsigned char i = 0; i < numThreads; i++)
+            for (unsigned char j = 0; j < numThreads; j++)
             {
-                threads[i].join();
-                vector<T_Hist>::iterator itr = threadVectors[i].begin();
-                vector<T_Hist>::iterator end = threadVectors[i].end();
+                threads[j].join();
+                vector<T_Hist>::iterator itr = threadVectors[j].begin();
+                vector<T_Hist>::iterator end = threadVectors[j].end();
                 while (itr != end)
                 {
                     T_Hist &tmp = *itr;
@@ -436,9 +447,17 @@ int main()
                     append.push_back(*itr);
                     itr++;
                 }
-                threadVectors[i].clear();
+                threadVectors[j].clear();
             }
-            writeResults(i, j + 1, 0, append);
+            threads.clear();
+            for (unsigned char j = 0; j < numThreads; j++)
+            {
+                threads.emplace_back(thread(writeResults, i, j, ref(append)));
+            }
+            for (unsigned char j = 0; j < numThreads; j++)
+            {
+                threads[j].join();
+            }
             append.clear();
         }
 

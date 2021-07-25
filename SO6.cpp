@@ -255,7 +255,7 @@ std::ostream &operator<<(std::ostream &os, const SO6 &m)
     for(int row = 0; row<6; row++){
         os << '[';
         for(int col = 0; col<6; col++)
-            os << m[col][row] <<' ';
+            os << m[col][row] << ' ';
         os << "] ";// \n";
     }
     //os << "\n";
@@ -276,7 +276,7 @@ char SO6::genLDE()
     return LDE;
 }
 
-SO6 SO6::residue()
+SO6 SO6::pattern()
 {
     char LDE = genLDE();
     SO6 res;
@@ -285,7 +285,7 @@ SO6 SO6::residue()
     {
         for (int j = 0; j < 5; j++)
         {
-            res.arr[i][j] = arr[i][j].pattern(LDE);
+            res.arr[i][j] = arr[i][j].residue(LDE);
         }
     }
     return res;
