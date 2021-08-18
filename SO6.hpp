@@ -1,3 +1,6 @@
+#include <vector>
+#include <string>
+
 class SO6
 {
 public:
@@ -19,7 +22,6 @@ public:
     const Z2 *operator[](const unsigned char i) const { return arr[i]; }        // Return the array element needed.
     // inline std::string getName(){return(name);} //getter for Name
     // inline void setName(std::string newName){name = newName;}
-    char getLDE() { return (0); } //getter for LDE
     SO6 transpose();
     // void genOneNorm(); //Returns 1-norm of the first row
     // bool isPerm(SO6 s); //Returns true if and only if s is similar to this object
@@ -27,7 +29,7 @@ public:
     char genLDE();                                              // generates LDE, called after multiplication and constructor
     friend std::ostream &operator<<(std::ostream &, const SO6 &); //display
     bool operator==(const SO6 &other) const;
-    SO6 pattern(); // returns the residue matrix using Z2::residue()
+    std::vector<std::vector<std::vector<char>>> pattern(); // returns the residue matrix using Z2::residue()
     /* inline char getLast()
     {
         if (hist.size() != 0)
@@ -104,7 +106,7 @@ public:
      * @param second array of Z2 of length 6
      * @return -1 if first < second, 0 if equal, 1 if first > second
      */
-    static const bool lexLess(Z2 *first, Z2 *second)
+    static bool lexLess(Z2 *first, Z2 *second)
     {
         for (unsigned char i = 0; i < 6; i++)
         {
@@ -129,7 +131,7 @@ public:
 
     static char lexComp(const Z2 first[6], const Z2 second[6])
     {
-        for (char i = 0; i < 6; i++)
+        for (unsigned char i = 0; i < 6; i++)
         {
             if (first[i] < second[i])
                 return -1;
@@ -141,7 +143,7 @@ public:
 
     static char lexComp(Z2 *first, Z2 *second, bool &signA, bool &signB)
     {
-        for (unsigned char i = 5; i > -1; i--)
+        for (unsigned char i = 5; i != 255; i--)
         // for (unsigned char i = 0; i < 6; i++)
         {
             Z2 f = first[i];
@@ -195,7 +197,7 @@ public:
         std::vector<bool> signs = column_signs(mat);
         std::vector<char> index(6, 0);
         for (unsigned char i = 0; i < 6; i++)
-            if(signs[i]) index[i] = -i-1;
+            if(signs[i]) index[i] = -(char)i-1;
             else index[i] = i+1;
         std::sort(index.begin(), index.end(),
                   [&](const int &a, const int &b)
@@ -219,11 +221,11 @@ public:
         return ret;
     }
 
-    static std::vector<Z2> multiply_only_column(SO6& first, SO6& second, char & col) {
+    static std::vector<Z2> multiply_only_column(SO6& first, SO6& second, unsigned char & col) {
         std::vector<Z2> ret(6);
         Z2 next;
-        for(int row = 0; row < 6; row++) {
-                for (char k = 0; k < 6; k++) {
+        for(unsigned char row = 0; row < 6; row++) {
+                for (unsigned char k = 0; k < 6; k++) {
                     next = first[k][row] * second[col][k];
                     ret[row] += next; 
                 }
@@ -231,11 +233,11 @@ public:
         return ret;
     }
 
-    static std::vector<Z2> multiply_only_row(SO6& first, SO6& second, char & row) {
+    static std::vector<Z2> multiply_only_row(SO6& first, SO6& second, unsigned char & row) {
         std::vector<Z2> ret(6);
         Z2 next;
-        for(int col = 0; col < 6; col++) {
-                for (char k = 0; k < 6; k++) {
+        for(unsigned char col = 0; col < 6; col++) {
+                for (unsigned char k = 0; k < 6; k++) {
                     next = first[k][row] * second[col][k];
                     ret[col] += next; 
                 }
@@ -243,9 +245,9 @@ public:
         return ret;
     }
 
-    static Z2 multiply_only_element(SO6& first, SO6& second, char & row, char & col) {
+    static Z2 multiply_only_element(SO6& first, SO6& second, unsigned char & row, unsigned char & col) {
         Z2 ret, next;
-        for (char k = 0; k < 6; k++) {
+        for (unsigned char k = 0; k < 6; k++) {
             next = first[k][row] * second[col][k];
             ret += next; 
         }
@@ -254,8 +256,8 @@ public:
 
 
     static void print_mat(SO6 & mat) {
-        for (int row = 0; row < 6; row++) {
-            for (int col = 0; col < 6; col++) {
+        for (unsigned char row = 0; row < 6; row++) {
+            for (unsigned char col = 0; col < 6; col++) {
                 std::cout << "(" << static_cast<int>(mat[col][row].val[0]) << static_cast<int>(mat[col][row].val[1]) << static_cast<int>(mat[col][row].val[2]) << ") ";
             }
             std::cout << "\n";

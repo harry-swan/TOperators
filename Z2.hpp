@@ -1,3 +1,4 @@
+#include <vector>
 
 class Z2
 {
@@ -5,7 +6,7 @@ class Z2
 public:
     Z2(const char, const char, const char); // the ints paseed form the entries of val
     Z2();                                         // the entries of val are all 0
-    inline char &operator[](char i)
+    inline char &operator[](unsigned char i)
     {
         // return val[i];
         if (i == 2)
@@ -13,7 +14,7 @@ public:
         i += (2 * val[2]) % 2;
         return val[i % 2];
     } //returns ith component of val
-    inline const char &operator[](char i) const
+    inline const char &operator[](unsigned char i) const
     {
         if (i == 2)
             return val[2];
@@ -44,7 +45,11 @@ public:
     Z2 abs();                                                    //Returns the absolute value
     friend std::ostream &operator<<(std::ostream &, const Z2 &); //display
     // float toFloat(); //Returns the Z2 object as a float
-    char getLDE() { return ((-val[2]) << 1) - ((val[0] + 1) % 2); }; // gives the denominator exponent in base sqrt(2). Note that this is a positive number when val[2] is negative!
+    unsigned char getLDE() {
+        if (val[2]==0)
+            return 0;
+        return ((-val[2]) << 1) - ((val[0] + 1) % 2);
+    }; // gives the denominator exponent in base sqrt(2). Note that this is a positive number when val[2] is negative!
     void negate()
     {
         val[0] = -val[0];
@@ -52,7 +57,7 @@ public:
     }
     static const Z2 inverse_root2() { return Z2(0, 1, 1); }
     static const Z2 one() { return Z2(1, 0, 0); }
-    Z2 residue(int LDE); //Extracts the residue for this entry
+    std::vector<unsigned char> residue(int LDE); //Extracts the residue for this entry
 // private:
     char val[3]; //values of the Z2
 };

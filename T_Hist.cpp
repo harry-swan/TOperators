@@ -96,7 +96,7 @@ SO6* T_Hist::tableLookup(std::vector<unsigned char> &index)
     unsigned char end = 2*index.size() - (index.back() >> 4 == 0);
     // Skip the first 4 bits if they are 0
     unsigned char i = ((index[0] & 15) == 0);
-    for (i; i < end; i++)
+    for (; i < end; i++)
     {
         //std::cout << +((index[i/2] >> (4*(i%2))) & 15) << "\n";
         node = node->next[((index[i/2] >> (4*(i%2))) & 15) - 1];
@@ -122,12 +122,12 @@ SO6 T_Hist::reconstruct()
     return *tableLookup(left) * *tableLookup(right);
 }
 
-std::vector<Z2> T_Hist::reconstruct_col(std::pair<SO6*, SO6*> &factors,char & col) const{
+std::vector<Z2> T_Hist::reconstruct_col(std::pair<SO6*, SO6*> &factors, unsigned char & col) const{
     std::vector<Z2> ret = SO6::multiply_only_column(*factors.first,*factors.second,col);
     return ret;
 }
 
-Z2 T_Hist::reconstruct_element(std::pair<SO6*, SO6*> &factors, char & row, char & col) const{
+Z2 T_Hist::reconstruct_element(std::pair<SO6*, SO6*> &factors, unsigned char & row, unsigned char & col) const{
     Z2 ret = SO6::multiply_only_element(*factors.first,*factors.second,row,col);
     return ret;
 }
@@ -155,13 +155,13 @@ T_Hist T_Hist::operator*(T_Hist &other)
     // if (hist.size())
     // {
     unsigned char end = 2*hist.size() - (hist.back() < 16);
-    for (unsigned char i = (hist.back() & 15 == 0); i < end; i++)
+    for (unsigned char i = ((hist.back() & 15) == 0); i < end; i++)
         history.histInsert(((hist[i/2] >> (4*(i%2))) & 15), idx++);
     // }
     // if (other.hist.size())
     // {
     end = 2*other.hist.size() - (other.hist.back() < 16);
-    for (unsigned char i = (other.hist.back() & 15 == 0); i < end; i++)
+    for (unsigned char i = ((other.hist.back() & 15) == 0); i < end; i++)
         history.histInsert(((other.hist[i/2] >> (4*(i%2))) & 15), idx++);
     // }
     history.set_lex_perm();
@@ -189,17 +189,17 @@ const std::pair<SO6*,SO6*> T_Hist::get_factors() const{
 bool T_Hist::operator<(const T_Hist &other) const
 {
     bool s0;                                // These booleans flag the signs from the permutation list
-    char i0;                                // Some integers the columns of interest as flagged by the permutation list
+    unsigned char i0;                                // Some integers the columns of interest as flagged by the permutation list
     Z2 el0; 
     std::pair<SO6*,SO6*> these; 
 
     if(*this == *T_Hist::curr_history) {
         these = other.get_factors();
         SO6 &first = *T_Hist::curr;
-        for(int lex_index = 5; lex_index>-1; lex_index--) {
+        for(unsigned char lex_index = 5; lex_index != 255; lex_index--) {
             s0 = other.perm[lex_index]<0;
             i0 = abs(other.perm[lex_index])-1;
-            for(char row = 5; row > -1; row --) {
+            for(unsigned char row = 5; row != 255; row --) {
                 el0 = other.reconstruct_element(these,row,i0);
                 if(s0) el0.negate();
                 if(!(first[lex_index][row] == el0)) return first[lex_index][row] < el0;
@@ -209,10 +209,10 @@ bool T_Hist::operator<(const T_Hist &other) const
     else if(&other == T_Hist::curr_history) {
         these = get_factors();
         SO6 &second = *T_Hist::curr;
-        for(int lex_index = 5; lex_index>-1; lex_index--) {
+        for(unsigned char lex_index = 5; lex_index != 255; lex_index--) {
             s0 = perm[lex_index]<0;
             i0 = abs(perm[lex_index])-1;
-            for(char row = 5; row > -1; row --) {
+            for(unsigned char row = 5; row != 255; row --) {
                 el0 = other.reconstruct_element(these,row,i0);
                 if(s0) el0.negate();
                 if(!(el0 == second[lex_index][row])) return el0 < second[lex_index][row];
@@ -221,18 +221,18 @@ bool T_Hist::operator<(const T_Hist &other) const
     } 
     
     bool s1;
-    char i1;
+    unsigned char i1;
     Z2 el1;
     these = get_factors();
     std::pair<SO6*,SO6*> those = other.get_factors(); 
 
-    for(char lex_index = 5; lex_index>-1 ; lex_index--) {
+    for(unsigned char lex_index = 5; lex_index != 255 ; lex_index--) {
         s0 = perm[lex_index]<0;
         i0 = abs(perm[lex_index])-1;
         s1 = other.perm[lex_index]<0;
         i1 = abs(other.perm[lex_index])-1;
 
-        for(char row = 5; row > -1; row --) {
+        for(unsigned char row = 5; row != 255; row--) {
             el0 = reconstruct_element(these,row,i0);     
             if(s0) el0.negate();
             

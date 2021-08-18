@@ -7,9 +7,9 @@ public:
     T_Hist(unsigned char);
     T_Hist(std::vector<unsigned char> &);
     SO6 reconstruct(); // Gets an SO6 object by multiplying together the right and left hist
-    std::vector<Z2> reconstruct_col(std::pair<SO6*, SO6*> &,char &) const; // Gets an SO6 object by multiplying together the right and left hist
-    std::vector<Z2> reconstruct_row(char &) const; // Gets an SO6 object by multiplying together the right and left hist
-    Z2 reconstruct_element(std::pair<SO6*,SO6*> &,char &, char &) const;
+    std::vector<Z2> reconstruct_col(std::pair<SO6*, SO6*> &,unsigned char &) const; // Gets an SO6 object by multiplying together the right and left hist
+    std::vector<Z2> reconstruct_row(unsigned char &) const; // Gets an SO6 object by multiplying together the right and left hist
+    Z2 reconstruct_element(std::pair<SO6*,SO6*> &,unsigned char &, unsigned char &) const;
     const std::pair<SO6*,SO6*> get_factors() const;
     T_Hist operator*(T_Hist &); // Multiplication is history concatenation
     bool operator==(T_Hist &);

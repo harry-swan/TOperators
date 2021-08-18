@@ -7,7 +7,7 @@
  * @author Andrew Glaudell
  * @author Jacob Weston
  * @author Mingzhen Tian
- * @version 7/25/21
+ * @version 8/15/21
  */
 
 #include <algorithm>
@@ -40,7 +40,7 @@ const unsigned char numThreads = 4;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 5;
+const unsigned char tCount = 6;
 
 // For this and above, brute force results into a vector
 // Has no effect if setless > tCount
@@ -59,7 +59,7 @@ const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-unsigned long long saveInterval = 50000;
+unsigned long long saveInterval = 50000*numThreads;
 
 //A Map of patterns to their lock and file, plus a lock for appending to this map
 map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>> patternMap;
@@ -135,32 +135,35 @@ void writeResults(unsigned char i, unsigned char threadNum, list<T_Hist> &append
     }*/
     while (itr != itrend)
     {
-        
         stringstream patternName;
-        patternName << "data/" << itr->reconstruct().pattern() << ".txt";
+        patternName << "data/" << itr->reconstruct() << ".txt";
         string name = patternName.str();
-        mapLock.lock_shared();
-        map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>>::iterator mapItr = patternMap.find(name);
+        const shared_lock<shared_timed_mutex>* slck = new shared_lock<shared_timed_mutex>(mapLock);
+        map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>>::const_iterator mapItr = patternMap.find(name);
         bool found = (mapItr != patternMap.end());
         pair<shared_ptr<mutex>, shared_ptr<fstream>> patternPair = mapItr->second;
-        mapLock.unlock_shared();
+        delete slck;
         if(!found)
         {
-            mapLock.lock();
+            const lock_guard<shared_timed_mutex> lck(mapLock);
             if(patternMap.find(name) == patternMap.end())
             {
-                shared_ptr<mutex> pairLock(new mutex);
-                shared_ptr<fstream> pairFstream(new fstream(name, std::ios_base::app));
+                shared_ptr<mutex> pairLock(new mutex());
+                shared_ptr<fstream> pairFstream(new fstream(name, std::ios_base::out));
                 patternPair = patternMap.emplace(name, pair<shared_ptr<mutex>, shared_ptr<fstream>>(pairLock, pairFstream)).first->second;
             }
-            mapLock.unlock();
+            else
+            {
+                mapItr = patternMap.find(name);
+                patternPair = mapItr->second;
+            }
         }
         shared_ptr<mutex> appendLock = patternPair.first;
         shared_ptr<fstream> write = patternPair.second;
         T_Hist hist = *itr;
-        appendLock->lock();
+        const lock_guard<mutex>* lck = new lock_guard<mutex>(*appendLock);
         *write << hist << ' ';
-        appendLock->unlock();
+        delete lck;
         itr++;
     }
     auto endTime = chrono::high_resolution_clock::now();

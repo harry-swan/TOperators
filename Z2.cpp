@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <vector>
 // #include <cmath>
 #include <stdint.h>
 #include "Z2.hpp"
@@ -127,16 +128,16 @@ bool Z2::operator<(Z2 &other)
     {
         if (diff.val[1] <= 0)
             return true;                              // a<0 and b<=0 means that diff < 0
-        char a2 = diff.val[0] * diff.val[0];        // compute a^2
-        char b2 = (diff.val[1] * diff.val[1]) << 1; // compute 2b^2
+        unsigned char a2 = diff.val[0] * diff.val[0];        // compute a^2
+        unsigned char b2 = (diff.val[1] * diff.val[1]) << 1; // compute 2b^2
         if (a2 > b2)
             return true; // a<0, b>0, and a^2 > 2 b^2 implies that a+sqrt(2)b <0
         return false;    // a<0, b>0, and a^2 <= 2 b^2 implies that a+sqrt(2)b >= 0
     }
     if (diff.val[1] >= 0)
         return false;                             // a>=0 and b>=0 means that diff >=0
-    char a2 = diff.val[0] * diff.val[0];        // compute a^2
-    char b2 = (diff.val[1] * diff.val[1]) << 1; // compute 2b^2
+    unsigned char a2 = diff.val[0] * diff.val[0];        // compute a^2
+    unsigned b2 = (diff.val[1] * diff.val[1]) << 1; // compute 2b^2
     if (a2 < b2)
         return true; // a>0, b<0, and a^2 < 2b^2 implies that a + sqrt(2) b < 0
     return false;    // a>0, b<0, and a^2 >= 2b^2 implies that a+sqrt(2)b >= 0
@@ -259,17 +260,23 @@ Z2 &Z2::reduce()
     return *this;
 }
 
-Z2 Z2::residue(int LDE)
+std::vector<unsigned char> Z2::residue(int LDE)
 {
+    std::vector<unsigned char> res {0,0,0};
     switch (getLDE() - LDE)
     {
     case 0:
-        return Z2(val[0] % 2, val[1] % 2, LDE);
+        res[0] = val[0] % 2;
+        res[1] = val[1] % 2;
+        res[2] = LDE;
+        break;
     case 1:
-        return Z2(val[1] % 2, 0, LDE);
+        res[0] = val[1] % 2;
+        res[2] = LDE;
     default:
-        return Z2();
+        break;
     }
+    return res;
 }
 
 // For debugging

@@ -29,22 +29,6 @@
 // unsigned long long SO6::calls[6] = {0,0,0,0,0,0};
 
 /**
- * Method to compare two Z2 arrays of length 6 lexicographically
- * @param first array of Z2 of length 6
- * @param second array of Z2 of length 6
- * @return -1 if first < second, 0 if equal, 1 if first > second
- */
-static bool lexLess(Z2 *first, Z2 *second)
-{
-    for (char i = 0; i < 6; i++)
-    {
-        if (first[i] != second[i])
-            return first[i] < second[i];
-    }
-    return false;
-}
-
-/**
  * Basic constructor. Initializes Zero matrix.
  *
  */
@@ -64,9 +48,9 @@ SO6::SO6()
 SO6::SO6(Z2 a[6][6])
 {
     // initializes SO6's entries according to a
-    for (char col = 0; col < 6; col++)
+    for (unsigned char col = 0; col < 6; col++)
     {
-        for (char row = 0; row < 6; row++)
+        for (unsigned char row = 0; row < 6; row++)
         {
             arr[col][row] = a[row][col];
         }
@@ -85,11 +69,11 @@ SO6 SO6::operator*(SO6 &other)
     Z2 next;
 
     // Compute product
-    for (char row = 0; row < 6; row++)
+    for (unsigned char row = 0; row < 6; row++)
     {
-        for (char col = 0; col < 6; col++)
+        for (unsigned char col = 0; col < 6; col++)
         {
-            for (char k = 0; k < 6; k++)
+            for (unsigned char k = 0; k < 6; k++)
             {
                 // next = arr[row][k]*other[col][k];            // This transpose * other
                 next = arr[k][row] * other[col][k]; // This not transpose * other
@@ -108,11 +92,11 @@ SO6 SO6::operator*(const SO6 &other) const
     Z2 next;
 
     // Compute product
-    for (char row = 0; row < 6; row++)
+    for (unsigned char row = 0; row < 6; row++)
     {
-        for (char col = 0; col < 6; col++)
+        for (unsigned char col = 0; col < 6; col++)
         {
-            for (char k = 0; k < 6; k++)
+            for (unsigned char k = 0; k < 6; k++)
             {
                 // next = arr[row][k]*other[col][k];            // This transpose * other
                 next = arr[k][row] * other[col][k]; // This not transpose * other
@@ -131,14 +115,17 @@ SO6 SO6::transpose()
 
 void SO6::fixSign()
 {
-    for (char col = 0; col < 6; col++)
+    for (unsigned char col = 0; col < 6; col++)
     {
-        for (char row = 0; row < 6; row++)
+        for (unsigned char row = 0; row < 6; row++)
         {
             if (arr[col][row] < 0)
             {
                 while (row < 6)
-                    arr[col][row++] = -arr[col][row];
+                {
+                    arr[col][row] = -arr[col][row];
+                    row++;
+                }
             }
             else if (arr[col][row] == 0)
                 continue;
@@ -150,7 +137,6 @@ void SO6::fixSign()
 // This may be slow
 void SO6::lexOrder()
 {
-    char ret[6];
     Z2 *myZ2[] = {arr[0], arr[1], arr[2], arr[3], arr[4], arr[5]};
     std::vector<Z2 *> myvector(myZ2, myZ2 + 6);
     std::sort(myvector.begin(), myvector.end(),
@@ -159,16 +145,16 @@ void SO6::lexOrder()
                   return SO6::lexLess(a, b);
               });
     Z2 arr2[6][6];
-    for (char i = 0; i < 6; i++)
+    for (unsigned char i = 0; i < 6; i++)
     {
-        for (char j = 0; j < 6; j++)
+        for (unsigned char j = 0; j < 6; j++)
         {
             arr2[i][j] = (myvector.at(i))[j];
         }
     }
-    for (char i = 0; i < 6; i++)
+    for (unsigned char i = 0; i < 6; i++)
     {
-        for (char j = 0; j < 6; j++)
+        for (unsigned char j = 0; j < 6; j++)
         {
             arr[i][j] = arr2[i][j];
         }
@@ -186,7 +172,7 @@ bool SO6::operator<(const SO6 &other) const
     SO6 first = *this;
     SO6 second = other;
 
-    for (char col = 0; col < 5; col++)
+    for (unsigned char col = 0; col < 6; col++)
     {
         switch (lexComp(first[col], second[col]))
         {
@@ -213,9 +199,9 @@ bool SO6::operator==(SO6 &other)
     SO6 second = other;
     // SO6 are the same if they have the same triangle
     // TODO: lower right triangle seems super fast, but can try out others
-    for (char col = 5; col > -1; col--)
+    for (unsigned char col = 5; col != 255; col--)
     {
-        for (char row = 5; row > -1; row--)
+        for (unsigned char row = 5; row != 255; row--)
         {
             if (first[col][row] != second[col][row])
                 return false;
@@ -232,9 +218,9 @@ bool SO6::operator==(const SO6 &other) const
 
     // SO6 are the same if they have the same triangle
     // TODO: lower right triangle seems super fast, but can try out others
-    for (int col = 5; col > -1; col--)
+    for (unsigned char col = 5; col != 255; col--)
     {
-        for (int row = 5; row > -1; row--)
+        for (unsigned char row = 5; row != 255; row--)
         {
             if (first[col][row] < second[col][row] || second[col][row] < first[col][row])
                 return false;
@@ -251,23 +237,26 @@ bool SO6::operator==(const SO6 &other) const
  */
 std::ostream &operator<<(std::ostream &os, const SO6 &m)
 {
-    //os << "\n";
-    for(int row = 0; row<6; row++){
+    std::vector<std::vector<std::vector<char>>> pat = ((SO6)m).pattern();
+    for(int row = 0; row < 6; row++)
+    {
         os << '[';
-        for(int col = 0; col<6; col++)
-            os << m[col][row] << (col!=5?" ":"");
-        os << "] ";// \n";
+        for(int col = 0; col < 6; col++)
+        {
+            os << std::hex << static_cast<int>(pat[col][row][0]) << ',' << static_cast<int>(pat[col][row][1]) <<
+                         ',' << static_cast<int>(pat[col][row][2]) << (col!=5?"-":"");
+        }
+        os << "]";
     }
-    //os << "\n";
     return os;
 }
 
 char SO6::genLDE()
 {
     char LDE = -1;
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 6; i++)
     {
-        for (int j = 0; j < 5; j++)
+        for (int j = 0; j < 6; j++)
         {
             if (arr[i][j].getLDE() > LDE)
                 LDE = arr[i][j].getLDE();
@@ -276,19 +265,23 @@ char SO6::genLDE()
     return LDE;
 }
 
-SO6 SO6::pattern()
+std::vector<std::vector<std::vector<char>>> SO6::pattern()
 {
     char LDE = genLDE();
-    SO6 res;
+    std::vector<std::vector<std::vector<char>>> pat;
+    pat.resize(6);
     // res.hist = hist;
-    for (int i = 0; i < 5; i++)
+    for (unsigned char i = 0; i < 6; i++)
     {
-        for (int j = 0; j < 5; j++)
+        pat[i].resize(6);
+        for (unsigned char j = 0; j < 6; j++)
         {
-            res.arr[i][j] = arr[i][j].residue(LDE);
+            std::vector<unsigned char> res = arr[i][j].residue(LDE);
+            for (unsigned char k = 0; k < 3; k++)
+                pat[i][j].emplace_back(res[k]);
         }
     }
-    return res;
+    return pat;
 }
 
 // char lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool &signA, bool &signB)
