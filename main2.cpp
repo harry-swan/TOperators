@@ -40,7 +40,7 @@ const unsigned char numThreads = 4;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 6;
+const unsigned char tCount = 4;
 
 // For this and above, brute force results into a vector
 // Has no effect if setless > tCount

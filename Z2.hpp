@@ -48,7 +48,7 @@ public:
     unsigned char getLDE() {
         if (val[2]==0)
             return 0;
-        return ((-val[2]) << 1) - ((val[0] + 1) % 2);
+        return ((val[2]) << 1) - ((val[0] + 1) % 2);
     }; // gives the denominator exponent in base sqrt(2). Note that this is a positive number when val[2] is negative!
     void negate()
     {
