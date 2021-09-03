@@ -27,9 +27,13 @@
 #include <shared_mutex>
 #include <utility>
 #include <map>
+#include <atomic>
 #include <stdint.h>
 #include <stdlib.h>
 #include <omp.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include "Z2.hpp"
 #include "SO6.hpp"
 #include "T_Hist.hpp"
@@ -50,21 +54,18 @@ const unsigned char setless = 9;
 //Make sure you have the txt files for what genFrom is set to if true
 const bool tIO = false;
 
-//Turn this on if you want to suppress saves
-//Why did I make this exist??? I guess for debugging
-const bool noSave = false;
-
 //If tIO true, choose which tCount to begin generating from:
 const unsigned char genFrom = tCount;
 
 //Saves every saveInterval iterations
 //This also determines parallel block sizes
-unsigned long long saveInterval = 50000*numThreads;
+unsigned long long saveInterval = 50000 * numThreads;
 
 //A Map of patterns to their lock and file, plus a lock for appending to this map
-map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>> patternMap;
+map<string, pair<shared_ptr<mutex>, shared_ptr<vector<T_Hist>>>> patternMap;
 shared_timed_mutex mapLock;
-
+atomic<unsigned long> counter;
+const unsigned long counterWrite = 10000000;
 
 // SO6 identity()
 // {
@@ -112,45 +113,33 @@ set<T_Hist> fileRead(unsigned char tc)
     return tset;
 }
 
-// This appends set append to the T file
+// This is used to write results to the files named after patterns
 void writeResults(unsigned char i, unsigned char threadNum, list<T_Hist> &append)
 {
-    if (noSave)
-        return;
     unsigned long long start = threadNum * (append.size() / numThreads) + min(threadNum, (unsigned char)(append.size() % numThreads));
     unsigned long long end = start + (append.size() / numThreads) + (threadNum < (unsigned char)(append.size() % numThreads));
     list<T_Hist>::iterator itr = append.begin();
     list<T_Hist>::iterator itrend = append.begin();
     advance(itr, start);
     advance(itrend, end);
-    auto startTime = chrono::high_resolution_clock::now();
-    //string fileName = "data/T" + name + ".txt";
-    /*if (j == 0)
-    {
-        write = fstream(fileName, std::ios_base::app);
-    }
-    else
-    {
-        write = fstream(fileName, std::ios_base::out);
-    }*/
     while (itr != itrend)
     {
         stringstream patternName;
         patternName << "data/" << itr->reconstruct() << ".txt";
         string name = patternName.str();
-        const shared_lock<shared_timed_mutex>* slck = new shared_lock<shared_timed_mutex>(mapLock);
-        map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>>::const_iterator mapItr = patternMap.find(name);
+        const shared_lock<shared_timed_mutex> *slck = new shared_lock<shared_timed_mutex>(mapLock);
+        map<string, pair<shared_ptr<mutex>, shared_ptr<vector<T_Hist>>>>::const_iterator mapItr = patternMap.find(name);
         bool found = (mapItr != patternMap.end());
-        pair<shared_ptr<mutex>, shared_ptr<fstream>> patternPair = mapItr->second;
+        pair<shared_ptr<mutex>, shared_ptr<vector<T_Hist>>> patternPair = mapItr->second;
         delete slck;
-        if(!found)
+        if (!found)
         {
             const lock_guard<shared_timed_mutex> lck(mapLock);
-            if(patternMap.find(name) == patternMap.end())
+            if (patternMap.find(name) == patternMap.end())
             {
                 shared_ptr<mutex> pairLock(new mutex());
-                shared_ptr<fstream> pairFstream(new fstream(name, std::ios_base::out));
-                patternPair = patternMap.emplace(name, pair<shared_ptr<mutex>, shared_ptr<fstream>>(pairLock, pairFstream)).first->second;
+                shared_ptr<vector<T_Hist>> pairVector(new vector<T_Hist>());
+                patternPair = patternMap.emplace(name, pair<shared_ptr<mutex>, shared_ptr<vector<T_Hist>>>(pairLock, pairVector)).first->second;
             }
             else
             {
@@ -159,16 +148,40 @@ void writeResults(unsigned char i, unsigned char threadNum, list<T_Hist> &append
             }
         }
         shared_ptr<mutex> appendLock = patternPair.first;
-        shared_ptr<fstream> write = patternPair.second;
-        T_Hist hist = *itr;
-        const lock_guard<mutex>* lck = new lock_guard<mutex>(*appendLock);
-        *write << hist << ' ';
+        shared_ptr<vector<T_Hist>> tVector = patternPair.second;
+        T_Hist hist = *itr++;
+        const lock_guard<mutex> *lck = new lock_guard<mutex>(*appendLock);
+        tVector->emplace_back(hist);
         delete lck;
-        itr++;
+        counter++;
+    }
+}
+
+// Outputs the results in patternMap to files
+void outputResults(unsigned char i, unsigned char threadNum)
+{
+    unsigned long long start = threadNum * (patternMap.size() / numThreads) + min(threadNum, (unsigned char)(patternMap.size() % numThreads));
+    unsigned long long end = start + (patternMap.size() / numThreads) + (threadNum < (unsigned char)(patternMap.size() % numThreads));
+    map<string, pair<shared_ptr<mutex>, shared_ptr<vector<T_Hist>>>>::iterator itr = patternMap.begin();
+    map<string, pair<shared_ptr<mutex>, shared_ptr<vector<T_Hist>>>>::iterator itrend = patternMap.begin();
+    advance(itr, start);
+    advance(itrend, end);
+    auto startTime = chrono::high_resolution_clock::now();
+    while (itr != itrend)
+    {
+        string name = itr->first;
+        vector<T_Hist>::iterator vectItr = itr->second.second->begin();
+        fstream outputFile(name, fstream::out | fstream::app);
+        vector<T_Hist>::iterator vectEnd = itr->second.second->end();
+        while (vectItr != vectEnd)
+        {
+            outputFile << *vectItr++ << ' ';
+        }
+        itr++->second.second->clear();
     }
     auto endTime = chrono::high_resolution_clock::now();
     auto ret = chrono::duration_cast<chrono::milliseconds>(endTime - startTime).count();
-    cout << ">>>Wrote " << (end - start) << " T-Count " << (i + 1) << " residue patterns in " << ret << "ms\n";
+    cout << ">>>Wrote " << (end - start) << " residue patterns in " << ret << "ms\n";
 }
 
 void threadMult(vector<T_Hist> &threadVector, const unsigned char threadNum, const unsigned long long threadContinue,
@@ -250,6 +263,7 @@ void threadMultSetless(vector<T_Hist> &threadVector, const unsigned char threadN
 
 int main()
 {
+    counter = 0;
     auto tbefore = chrono::high_resolution_clock::now();
 
     operationsPerThread = saveInterval / numThreads;
@@ -399,6 +413,19 @@ int main()
                 threads[j].join();
             }
             append.clear();
+            threads.clear();
+            if (counter > counterWrite)
+            {
+                for (unsigned char j = 0; j < numThreads; j++)
+                {
+                    threads.emplace_back(thread(outputResults, i, j));
+                }
+                for (unsigned char j = 0; j < numThreads; j++)
+                {
+                    threads[j].join();
+                }
+                counter = 0;
+            }
         }
 
         // End main loop
@@ -436,7 +463,7 @@ int main()
             if (j % 15 == 0 && i > tCount)
             {
                 ifstream tfile;
-                tfile.open(("data/T" + to_string(i + 1) + 's' + to_string(1 + (j/15)) + ".txt").c_str());
+                tfile.open(("data/T" + to_string(i + 1) + 's' + to_string(1 + (j / 15)) + ".txt").c_str());
                 if (!tfile)
                 {
                     cout << "File does not exist.\n";
@@ -488,6 +515,19 @@ int main()
                 threads[j].join();
             }
             append.clear();
+            threads.clear();
+            if (counter > counterWrite)
+            {
+                for (unsigned char j = 0; j < numThreads; j++)
+                {
+                    threads.emplace_back(thread(outputResults, i, j));
+                }
+                for (unsigned char j = 0; j < numThreads; j++)
+                {
+                    threads[j].join();
+                }
+                counter = 0;
+            }
         }
 
         // End main loop
@@ -500,12 +540,19 @@ int main()
         i++;
     }
 
+    vector<thread> threads = {};
+    for (unsigned char j = 0; j < numThreads; j++)
+    {
+        threads.emplace_back(thread(outputResults, i, j));
+    }
+    for (unsigned char j = 0; j < numThreads; j++)
+    {
+        threads[j].join();
+    }
+
     // Free all table memory
     T_Hist::tableDelete(T_Hist::head, NULL);
     patternMap.clear();
-    map<string, pair<shared_ptr<mutex>, shared_ptr<fstream>>>::iterator itr = patternMap.begin();
-    while(itr != patternMap.end())
-        itr->second.second->close();
     chrono::duration<double> timeelapsed = chrono::high_resolution_clock::now() - tbefore;
     std::cout << "\nTotal time elapsed: " << chrono::duration_cast<chrono::milliseconds>(timeelapsed).count() << "ms\n\n\n";
     std::cout << "{";
