@@ -262,17 +262,17 @@ Z2 &Z2::reduce()
 
 std::vector<unsigned char> Z2::residue(int LDE)
 {
-    std::vector<unsigned char> res {0,0,0};
+    std::vector<unsigned char> res {0,0};//,0};
     switch (LDE - getLDE())
     {
     case 0:
         res[0] = std::abs(val[0]) % 2;
         res[1] = std::abs(val[1]) % 2;
-        res[2] = LDE;
+      //  res[2] = LDE;
         break;
     case 1:
         res[0] = std::abs(val[1]) % 2;
-        res[2] = LDE;
+       // res[2] = LDE;
     default:
         break;
     }
