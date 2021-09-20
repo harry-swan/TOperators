@@ -238,13 +238,13 @@ bool SO6::operator==(const SO6 &other) const
 std::ostream &operator<<(std::ostream &os, const SO6 &m)
 {
     std::vector<std::vector<std::vector<char>>> pat = ((SO6)m).pattern();
+    os << std::hex << static_cast<int>(((SO6)m).genLDE());
     for(int row = 0; row < 6; row++)
     {
         os << '[';
         for(int col = 0; col < 6; col++)
         {
-            os << std::hex << static_cast<int>(pat[col][row][0]) << ',' << static_cast<int>(pat[col][row][1]) <<
-                         ',' << static_cast<int>(pat[col][row][2]) << (col!=5?"-":"");
+            os << std::hex << static_cast<int>(pat[col][row][0]) << ' ' << static_cast<int>(pat[col][row][1]) << (col!=5?",":"");
         }
         os << "]";
     }
@@ -277,7 +277,7 @@ std::vector<std::vector<std::vector<char>>> SO6::pattern()
         for (unsigned char j = 0; j < 6; j++)
         {
             std::vector<unsigned char> res = arr[i][j].residue(LDE);
-            for (unsigned char k = 0; k < 3; k++)
+            for (unsigned char k = 0; k < 2; k++)
                 pat[i][j].emplace_back(res[k]);
         }
     }
