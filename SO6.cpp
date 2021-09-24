@@ -57,6 +57,47 @@ SO6::SO6(Z2 a[6][6])
     }
 }
 
+//Functions to ensure patterns are properly sorted
+
+char SO6::resLexComp(std::vector<char> &first, std::vector<char> &second){
+	if(first[0] < second[0]) return 1;
+	else if(first[0] > second[0]) return -1;
+	else if(first[1] < second[1]) return 1;
+	else if(first[1] > second[1]) return -1;
+	return 0;
+}
+
+bool SO6::resVectLexComp(std::vector<std::vector<char>> &first, std::vector<std::vector<char>> &second){
+	char c;
+	for(unsigned char i = 0; i<6; i++){
+	   c = SO6::resLexComp(first[i], second[i]);
+	   if(c==1) return true;
+	   else if(c==-1) return false;
+    }
+    return false;
+
+}
+
+std::vector<char> SO6::resColSort(std::vector<std::vector<std::vector<char>>> &mat){
+	std::vector<char> index= {0,1,2,3,4,5};
+    std::sort(index.begin(), index.end(),[&](const int &a, const int &b){return SO6::resVectLexComp(mat[a], mat[b]);});
+	return index;	
+}
+
+void SO6::res_sort(std::vector<std::vector<std::vector<char>>> &mat){
+	std::vector<char> permuted = SO6::resColSort(mat);
+	std::vector<std::vector<std::vector<char>>> to_return;
+	to_return.resize(6);
+	std::vector<std::vector<char>> col = mat[0];
+	for(char i = 0; i<6; i++){
+		to_return[i].resize(6);
+		to_return[i] = mat[permuted[i]];
+	}
+	return to_return;
+}
+
+
+
 /**
  * Overloads the * operator with matrix multiplication for SO6 objects
  * @param other reference to SO6 to be multiplied with (*this)
@@ -281,7 +322,7 @@ std::vector<std::vector<std::vector<char>>> SO6::pattern()
                 pat[i][j].emplace_back(res[k]);
         }
     }
-    return pat;
+    return res_sort(pat);
 }
 
 // char lexComp(std::vector<Z2> &first, std::vector<Z2> &second, bool &signA, bool &signB)
