@@ -13,6 +13,10 @@ public:
     void fixSign();
     void lexOrder();
     void reduced_rep();
+    char resLexComp(std::vector<char> &, std::vector<char> &);
+    bool resVectLexComp(std::vector<std::vector<char>> &, std::vector<std::vector<char>> &);
+    std::vector<char> resColSort(std::vector<std::vector<std::vector<char>>> &);
+    std::vector<std::vector<std::vector<char>>> res_sort(std::vector<std::vector<std::vector<char>>> &);
     inline Z2 &operator()(unsigned char col, unsigned char row) { return arr[col][row]; } //returns the (i,j)th entry
     // bool operator%(SO6&);
     bool operator<(const SO6 &) const;

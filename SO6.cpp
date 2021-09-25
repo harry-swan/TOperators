@@ -84,7 +84,7 @@ std::vector<char> SO6::resColSort(std::vector<std::vector<std::vector<char>>> &m
 	return index;	
 }
 
-void SO6::res_sort(std::vector<std::vector<std::vector<char>>> &mat){
+std::vector<std::vector<std::vector<char>>> SO6::res_sort(std::vector<std::vector<std::vector<char>>> &mat){
 	std::vector<char> permuted = SO6::resColSort(mat);
 	std::vector<std::vector<std::vector<char>>> to_return;
 	to_return.resize(6);
