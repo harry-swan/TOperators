@@ -44,7 +44,7 @@ const unsigned char numThreads = 4;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 2;
+const unsigned char tCount = 5;
 
 // For this and above, brute force results into a vector
 // Has no effect if setless > tCount
@@ -392,7 +392,6 @@ int main()
                     SO6 tmp2 = T_Hist::curr_history->reconstruct();
                     tmp2.reduced_rep();
                     T_Hist::curr = &tmp2;
-                    // next.insert(*itr);
                     if (next.insert(*itr).second)
                     {
                         // This is only called if the insert into next succeeded

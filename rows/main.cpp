@@ -4,14 +4,12 @@
 #include <future>
 #include <fstream>
 #include <chrono>
-#include <cmath>
-#include <set>
 #include <list>
 #include <string>
 #include <sstream>
-#include <mutex>
+#include <memory>
+#include <functional>
 #include <utility>
-#include <map>
 #include <stdint.h>
 #include <stdlib.h>
 #include <omp.h>
@@ -24,8 +22,31 @@
 
 using namespace std;
 
-void generatePermutations(vector<vector<vector<char>>> p, vector<vector<vector<char>>> n,
-                          list<vector<vector<vector<char>>>> &perms)
+const unsigned char numThreads = 4;
+
+struct Pattern
+{
+    vector<vector<vector<char>>> p;
+    string s;
+    bool e;
+    shared_ptr<struct Pattern> next;
+};
+
+shared_ptr<struct Pattern> head;
+
+void insert(vector<vector<vector<char>>> p, string s)
+{
+    shared_ptr<struct Pattern> pattern(new struct Pattern);
+    pattern->p = p;
+    pattern->s = s;
+    pattern->next = head;
+    pattern->e = true;
+    head = pattern;
+}
+
+void
+generatePermutations(vector<vector<vector<char>>> p, vector<vector<vector<char>>> n,
+                     list<vector<vector<vector<char>>>> &perms)
 {
     if (!p.size())
     {
@@ -85,49 +106,79 @@ vector<vector<vector<char>>> readPattern(string pattern)
     return transposeMatrix;
 }
 
+void rowWrite(list<vector<vector<vector<char>>>> perms, string patternName, shared_ptr<struct Pattern> start, vector<unsigned int> &counters, unsigned int idx)
+{
+    shared_ptr<struct Pattern> pattern = start;
+    fstream inputPatterns;
+    fstream outputPatterns(patternName, fstream::out | fstream::app);
+    while(pattern)
+    {
+        if(pattern->e && equals(perms, pattern->p))
+        {
+            pattern->e = false;
+            counters[idx]++;
+            inputPatterns = fstream("../data/" + pattern->s, fstream::in);
+            outputPatterns << inputPatterns.rdbuf();
+            inputPatterns.close();
+        }
+        pattern = pattern->next;
+    }
+}
+
 int main()
 {
     auto startTime = chrono::high_resolution_clock::now();
     ifstream p("patterns.txt");
     char pattern[255];
-    list<pair<vector<vector<vector<char>>>, string>> patterns;
+    unsigned int e_count = 0;
     while (p.getline(pattern, 255))
     {
-        pair<vector<vector<vector<char>>>, string> pr;
-        pr.first = readPattern(pattern);
         string s(pattern);
-        pr.second = s;
-        patterns.emplace_back(pr);
+        insert(readPattern(pattern), s);
+        e_count++;
     }
     p.close();
-    list<pair<vector<vector<vector<char>>>, string>>::iterator itr = patterns.begin();
-    while (itr != patterns.end())
+    list<vector<vector<vector<char>>>> threadPatterns;
+    atomic<int> activeThreads(0);
+    while (e_count > 0)
     {
-        string patternName;
-        patternName = "data/" + itr->second.substr(itr->second.find("["));
-        fstream outputPatterns(patternName, fstream::out | fstream::app);
-        fstream inputPatterns("../data/" + itr->second, fstream::in);
-        outputPatterns << inputPatterns.rdbuf();
-        inputPatterns.close();
-        list<vector<vector<vector<char>>>> perms = {};
-        generatePermutations(itr->first, {}, perms);
-        list<pair<vector<vector<vector<char>>>, string>>::iterator itr2 = next(itr);
-        while (itr2 != patterns.end())
+        shared_ptr<struct Pattern> newPattern;
+        newPattern = head;
+        vector<thread> threads = {};
+        vector<unsigned int> counters(numThreads);
+        unsigned int counter_pos = 0;
+        while(newPattern && activeThreads < numThreads)
         {
-            if (equals(perms, itr2->first))
+            if(newPattern->e)
             {
-                inputPatterns = fstream("../data/" + itr2->second, fstream::in);
-                outputPatterns << inputPatterns.rdbuf();
-                itr2--;
-                patterns.erase(next(itr2));
-                inputPatterns.close();
+                list<vector<vector<vector<char>>>>::iterator itr = threadPatterns.begin();
+                list<vector<vector<vector<char>>>> perms = {};
+                generatePermutations(newPattern->p, {}, perms);
+                while(itr != threadPatterns.end() && !equals(perms, *itr))
+                {
+                    itr++;
+                }
+                if(itr == threadPatterns.end())
+                {
+                    string patternName = "data/" + newPattern->s.substr(newPattern->s.find("["));
+                    threadPatterns.emplace_back(newPattern->p);
+                    threads.emplace_back(thread(rowWrite, perms, patternName, newPattern, ref(counters), counter_pos++));
+                    activeThreads++;
+                }
             }
-            itr2++;
+            newPattern = newPattern->next;
         }
-        outputPatterns.close();
-        itr++;
+        unsigned short usedThreads = activeThreads;
+        counter_pos = 0;
+        while(activeThreads > 0)
+        {
+            threads[usedThreads - activeThreads].join();
+            activeThreads--;
+            e_count -= counters[counter_pos++];
+        }
+        threadPatterns.clear();
     }
     auto endTime = chrono::high_resolution_clock::now();
     auto ret = chrono::duration_cast<chrono::milliseconds>(endTime - startTime).count();
-    cout << ">>>Combined row permutation equivalent patterns in " << ret << "ms\n";
+    std::cout << ">>>Combined row permutation equivalent patterns in " << ret << "ms\n";
 }
