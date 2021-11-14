@@ -8,18 +8,10 @@ public:
     Z2();                                         // the entries of val are all 0
     inline char &operator[](unsigned char i)
     {
-        // return val[i];
-        if (i == 2)
-            return val[2];
-        i += (2 * val[2]) % 2;
-        return val[i % 2];
+        return val[i];
     } //returns ith component of val
     inline const char &operator[](unsigned char i) const
     {
-        if (i == 2)
-            return val[2];
-        i = (i + (2 * val[2]) % 2) % 2;
-        // i = (i+val[2]%2)%2;
         return val[i];
     }                     //does the same but for const Z2
     Z2 operator+(Z2 &);   //handles addition
@@ -48,7 +40,11 @@ public:
     unsigned char getLDE() {
         if (val[2]==0)
             return 0;
-        return ((val[2]) << 1) - ((val[0] + 1) % 2);
+        if (val[0] % 2)
+        {
+            return val[2] << 1;
+        }
+        return ((val[2]) << 1) - 1;
     }; // gives the denominator exponent in base sqrt(2). Note that this is a positive number when val[2] is negative!
     void negate()
     {

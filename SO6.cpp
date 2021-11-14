@@ -318,7 +318,7 @@ std::vector<std::vector<std::vector<char>>> SO6::pattern()
         for (unsigned char j = 0; j < 6; j++)
         {
             std::vector<unsigned char> res = arr[i][j].residue(LDE);
-            for (unsigned char k = 0; k < 2; k++)
+            for (char k = 1; k >= 0; k--)
                 pat[i][j].emplace_back(res[k]);
         }
     }

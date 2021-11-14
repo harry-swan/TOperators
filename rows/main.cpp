@@ -22,7 +22,7 @@
 
 using namespace std;
 
-const unsigned char numThreads = 4;
+const unsigned char numThreads = 1;
 
 struct Pattern
 {

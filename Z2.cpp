@@ -271,7 +271,7 @@ std::vector<unsigned char> Z2::residue(int LDE)
       //  res[2] = LDE;
         break;
     case 1:
-        res[0] = std::abs(val[1]) % 2;
+        res[0] = std::abs(val[0]) % 2;
        // res[2] = LDE;
     default:
         break;
@@ -291,7 +291,7 @@ std::ostream &operator<<(std::ostream &os, const Z2 &z)
 
 void Z2::print_me() {
     std::cout << "(";
-    for (int i=0; i <3; i++) 
+    for (int i=0; i <3; i++)
     {
         if(i == 2) {
             std::cout << static_cast<int>(val[i]) << ")\n";

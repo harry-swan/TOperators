@@ -44,7 +44,7 @@ const unsigned char numThreads = 4;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 5;
+const unsigned char tCount = 1;
 
 // For this and above, brute force results into a vector
 // Has no effect if setless > tCount
@@ -263,6 +263,10 @@ void threadMultSetless(vector<T_Hist> &threadVector, const unsigned char threadN
 
 int main()
 {
+    // auto mat = T_Hist::tsv[1];
+    // SO6::print_mat(mat);
+    // cout << mat;
+    // exit(0);
     counter = 0;
     auto tbefore = chrono::high_resolution_clock::now();
 
