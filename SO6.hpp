@@ -1,5 +1,6 @@
 #include <vector>
 #include <string>
+#include <cmath>
 #include <algorithm>
 
 class SO6
@@ -263,7 +264,7 @@ public:
     static void print_mat(SO6 & mat) {
         for (unsigned char row = 0; row < 6; row++) {
             for (unsigned char col = 0; col < 6; col++) {
-                std::cout << "(" << static_cast<int>(mat[col][row].val[0]) << static_cast<int>(mat[col][row].val[1]) << static_cast<int>(mat[col][row].val[2]) << ") ";
+                std::cout << static_cast<int>(mat[col][row].val[0]) << "+" << static_cast<int>(mat[col][row].val[1]) << "*sqrt(2) / 2^" << static_cast<int>(mat[col][row].val[2]) << " ";
             }
             std::cout << "\n";
         }
@@ -282,6 +283,34 @@ public:
     //     }
     //     return ret;
     // }
+
+    static unsigned int col_val(std::vector<std::vector<char>> col)
+    {
+        unsigned int val = 0;
+        for(unsigned char i = 0; i<6; i++)
+        {
+            switch(col[i][0] + col[i][1]*2)
+            {
+                case 1:
+                    break;
+                case 2:
+                    val += std::pow(4,i);
+                    break;
+                case 3:
+                    val += 2*std::pow(4,i);
+                    break;
+                default:
+                    val += 3*std::pow(4,i);
+                    break;
+            }
+        }
+        return val;
+    }
+
+    static bool col_compare(std::vector<std::vector<char>> a, std::vector<std::vector<char>> b)
+    {
+        return col_val(a) > col_val(b);
+    }
 
 private:
     Z2 arr[6][6];

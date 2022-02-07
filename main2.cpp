@@ -44,7 +44,7 @@ const unsigned char numThreads = 4;
 unsigned long long operationsPerThread;
 unsigned char rem;
 
-const unsigned char tCount = 1;
+const unsigned char tCount = 4;
 
 // For this and above, brute force results into a vector
 // Has no effect if setless > tCount
@@ -134,6 +134,7 @@ void writeResults(unsigned char i, unsigned char threadNum, list<T_Hist> &append
         delete slck;
         if (!found)
         {
+            // Prevents patterns from being added to the map simultaneously
             const lock_guard<shared_timed_mutex> lck(mapLock);
             if (patternMap.find(name) == patternMap.end())
             {
@@ -263,9 +264,15 @@ void threadMultSetless(vector<T_Hist> &threadVector, const unsigned char threadN
 
 int main()
 {
-    // auto mat = T_Hist::tsv[1];
+    // auto mat = T_Hist::tsv[1];//*T_Hist::tsv[9]*T_Hist::tsv[1];
+    // mat.reduced_rep();
     // SO6::print_mat(mat);
-    // cout << mat;
+    // cout << mat << '\n';
+    // auto z2 = Z2(1,0,1);
+    // z2.print_me();
+    // cout << "LDE: " << static_cast<int>(z2.getLDE()) << '\n';
+    // auto res = z2.residue(3);
+    // cout << std::hex << static_cast<int>(res[0]) << ' ' << static_cast<int>(res[1]) << '\n';
     // exit(0);
     counter = 0;
     auto tbefore = chrono::high_resolution_clock::now();

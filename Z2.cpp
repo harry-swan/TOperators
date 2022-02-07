@@ -263,19 +263,35 @@ Z2 &Z2::reduce()
 std::vector<unsigned char> Z2::residue(int LDE)
 {
     std::vector<unsigned char> res {0,0};//,0};
+    char a, b;
+    if (getLDE() % 2)
+    {
+        a = val[1];
+        b = val[0] / 2;
+    }
+    else{
+        a = val[0];
+        b = val[1];
+    }
     switch (LDE - getLDE())
     {
     case 0:
-        res[0] = std::abs(val[0]) % 2;
-        res[1] = std::abs(val[1]) % 2;
-      //  res[2] = LDE;
+        res[0] = std::abs(a) % 2;
+        res[1] = std::abs(b) % 2;
         break;
     case 1:
-        res[0] = std::abs(val[0]) % 2;
-       // res[2] = LDE;
+        res[1] = std::abs(a) % 2;
     default:
         break;
     }
+    // if (getLDE() % 2)
+    // {
+    //     unsigned char temp = res[0];
+    //     res[0] = res[1];
+    //     res[1] = temp;
+    // }
+    // print_me();
+    // std::cout << "LDE Difference:" << LDE - getLDE() << ", " << std::hex << (int)res[0] << "+" << (int)res[1] << "*sqrt(2)\n";
     return res;
 }
 
@@ -291,7 +307,7 @@ std::ostream &operator<<(std::ostream &os, const Z2 &z)
 
 void Z2::print_me() {
     std::cout << "(";
-    for (int i=0; i <3; i++)
+    for (int i=0; i < 3; i++)
     {
         if(i == 2) {
             std::cout << static_cast<int>(val[i]) << ")\n";

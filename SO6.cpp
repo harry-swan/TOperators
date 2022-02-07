@@ -93,6 +93,7 @@ std::vector<std::vector<std::vector<char>>> SO6::res_sort(std::vector<std::vecto
 		to_return[i].resize(6);
 		to_return[i] = mat[permuted[i]];
 	}
+    std::sort(to_return.begin(), to_return.end(), col_compare);
 	return to_return;
 }
 
@@ -311,14 +312,13 @@ std::vector<std::vector<std::vector<char>>> SO6::pattern()
     char LDE = genLDE();
     std::vector<std::vector<std::vector<char>>> pat;
     pat.resize(6);
-    // res.hist = hist;
     for (unsigned char i = 0; i < 6; i++)
     {
         pat[i].resize(6);
         for (unsigned char j = 0; j < 6; j++)
         {
             std::vector<unsigned char> res = arr[i][j].residue(LDE);
-            for (char k = 1; k >= 0; k--)
+            for (unsigned char k = 0; k < 2; k++)
                 pat[i][j].emplace_back(res[k]);
         }
     }
